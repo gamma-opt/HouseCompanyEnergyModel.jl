@@ -124,9 +124,6 @@ end
 
 
 
-
-
-
 # --- Processes ---
 
 struct PlainUnitProcess <: AbstractProcess
@@ -226,6 +223,8 @@ function flow(source::Name, sink::Name,
     VOM_cost::Float64, ramp_up::Float64, ramp_down::Float64)
 
     capacity = time_series(capacity, S, T)
+    if source == sink
+        throw(DomainError("The source and sink of a flow cannot be the same."))
     if !(0 <= ramp_up <= 1)
         throw(DomainError("Ramp up value must be between 0 and 1."))
     elseif !(0 <= ramp_down <= 1)
@@ -234,6 +233,7 @@ function flow(source::Name, sink::Name,
 
     Flow(source, sink, capacity, VOM_cost, ramp_up, ramp_down)
 end
+
 
 
 # --- NetworkModel ---
@@ -280,20 +280,130 @@ mutable struct NetworkModel
 end
 
 # --- Adding nodes ---
-function validate_name(structure::ModelStructure, name::Name)
-    if (name in (n.name for n in structure.plain_nodes)) 
-        throw(DomainError("Name $name is not unique."))
-    elseif (name in (n.name for n in structure.storage_nodes))
-        throw(DomainError("Name $name is not unique."))
-    elseif (name in (n.name for n in structure.commodity_nodes))
-        throw(DomainError("Name $name is not unique."))
-    elseif (name in (n.name for n in structure.market_nodes))
-        throw(DomainError("Name $name is not unique."))
-    elseif (name in (p.name for p in structure.plain_processes))
-        throw(DomainError("Name $name is not unique."))
-    elseif (name in (p.name for p in structure.cf_processes))
-        throw(DomainError("Name $name is not unique."))
-    elseif (name in (p.name for p in structure.online_processes)) 
-        throw(DomainError("Name $name is not unique."))        
+
+function names(structure::ModelStructure; nodes::Bool=false, processes::Bool=false)
+    all_names = []
+
+    if nodes
+        push!(all_names, [(n.name for n in structure.plain_nodes)...])
+        push!(all_names, [(n.name for n in structure.storage_nodes)...])
+        push!(all_names, [(n.name for n in structure.commodity_nodes)...])
+        push!(all_names, [(n.name for n in structure.market_nodes)...])
     end
+
+    if processes
+        push!(all_names, [(p.name for p in structure.plain_processes)...])
+        push!(all_names, [(p.name for p in structure.cf_processes)...])
+        push!(all_names, [(p.name for p in structure.online_processes)...])
+    end
+    return all_names
+end
+
+
+function add_nodes!(structure::ModelStructure, nodes::Vector{AbstractNode})
+    for n in nodes
+        
+        names = names(structure, nodes=true, processes=true)
+        if n.name in names
+            throw(DomainError("Name $n.name is not unique. Name must be unique."))
+        end
+
+        if isa(n, PlainNode)
+            push!(structure.plain_nodes, n)
+
+        elseif isa(n, StorageNode)
+            push!(structure.storage_nodes, n)
+
+        elseif isa(n, CommodityNode)
+            push!(structure.commodity_nodes, n)
+
+        elseif isa(n, MarketNode)
+            push!(structure.market_nodes, n)
+
+        else
+            throw(DomainError("Node $n node type is not recognised.")) 
+        end
+    end
+end
+
+
+function add_processes!(structure::ModelStructure, processes::Vector{AbstractProcess})
+    for p in processes
+        
+        names = names(structure, nodes=true, processes=true)
+        if p.name in names
+            throw(DomainError("Name $p.name is not unique. Name must be unique."))
+        end
+
+        if isa(p, PlainUnitProcess)
+            push!(structure.plain_processes, p)
+
+        elseif isa(p, CFUnitProcess)
+            push!(structure.cf_processes, p)
+
+        elseif isa(p, OnlineUnitProcess)
+            push!(structure.online_processes, p)
+
+        else
+            throw(DomainError("Process $p type is not recognised.")) 
+        end
+    end
+end
+
+
+function add_flows!(structure::ModelStructure, flows::Vector{Flow})
+    names = names(structure, nodes=true, processes=true)
+    nodes = names(structure, nodes=true)
+    processes = names(structure, processes=true)
+    market_nodes = (n.name for n in structure.market_nodes)
+    commodity_nodes = (n.name for n in structure.commodity_nodes)
+
+    for f in flows
+        
+        if !(f.source in names)
+            throw(DomainError("Source of flow ($f.source -> $f.sink) not found in model structure.")) 
+
+        elseif !(f.sink in names)
+            throw(DomainError("Sink of flow ($f.source -> $f.sink) not found in model structure.")) 
+
+        elseif f.source in processes && !(f.sink in nodes)
+            throw(DomainError("Flow from a unit process has to go to a node. Issue in ($f.source -> $f.sink)"))
+
+        elseif f.sink in processes && !(f.source in nodes)
+            throw(DomainError("Flow to a unit process has to come from a node. Issue in ($f.source -> $f.sink)"))
+
+        elseif f.sink in commodity_nodes
+            throw(DomainError("A commodity node cannot be a sink. Issue in ($f.source -> $f.sink)"))
+
+        elseif f.source in market_nodes && !(f.sink in nodes)
+            throw(DomainError("A market node cannot be a connected to a unit process. Issue in ($f.source -> $f.sink)"))
+
+        elseif f.sink in market_nodes && !(f.source in nodes)
+            throw(DomainError("A market node cannot be a connected to a unit process. Issue in ($f.source -> $f.sink)"))
+        end
+
+    end
+
+
+    # Check that market nodes have symmetric flows to nodes
+    market_input_flows = filter(f -> f.sink in market_nodes, flows)
+    market_input_names = [(f.source for f in market_input_flows)...]
+    market_output_flows = filter(f -> f.source in market_nodes, flows)
+    market_output_names = [(f.sink for f in market_output_flows)...]
+    if !issetequal(Set(market_input_names), Set(market_output_names))
+        throw(DomainError("The arcs to and from market nodes should be symmetric."))
+    end
+
+    # Check that all nodes and processes are connected to the network by some flow
+    all_sources = [(f.source for f in flows)...]
+    all_sinks = [(f.sink for f in flows)...]
+    all_endpoints = unique([all_sources..., all_sinks...])
+    for i in names
+        if !(i in all_endpoints)
+            throw(DomainError("Node or process $i is not an endpoint to any flow."))
+        end
+    end
+
+    # if all checks passed, push flows to model structure
+    push!(structure.flows, flows)
 end
