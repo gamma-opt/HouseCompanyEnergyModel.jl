@@ -101,7 +101,8 @@ not_efficiency = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
 # Market Flow
 @test isa(MarketFlow("n1", "n2"), AbstractFlow)
-@test isa(market_flow("n1", "n2"), MarketFlow)
+@test isa(market_flow("n1", "n2")[1], MarketFlow)
+@test isa(market_flow("n1", "n2")[2], MarketFlow)
 @test_throws DomainError market_flow("n1", "n1")
 
 
@@ -197,11 +198,11 @@ fX3b = process_flow("p3", "n5", time_series, S, T, 1.0, 0.1, 0.1)
 f4 = transfer_flow("n5", "n2")
 
 # node - market node
-f5a = market_flow("n1", "n7")
-f5b = market_flow("n3", "n8")
+f5a, f5b = market_flow("n1", "n7")
+f5c, f5d = market_flow("n3", "n8")
 
 # market node - market node ERROR
-fX6 = market_flow("n8", "n7")
+fX6a, fX6b = market_flow("n8", "n7")
 
 # process - process ERROR
 fX7 = process_flow("p1", "p6", time_series, S, T, 1.0, 0.1, 0.1)
@@ -223,13 +224,13 @@ f11b = process_flow("p6", "n3", time_series, S, T, 1.0, 0.1, 0.1)
 
 # Flows for testing flow type specific constraints
 # market node - plain process for all flow types ERROR
-fX12a = market_flow("n7", "p1")
-fX12b = process_flow("n7", "p1", time_series, S, T, 1.0, 0.1, 0.1)
+fX12a, fX12b = market_flow("n7", "p1")
 fX12c = transfer_flow("n7", "p1")
+fX12d = process_flow("n7", "p1", time_series, S, T, 1.0, 0.1, 0.1)
 
 # plain process - plain node for all but ProcessFlow types ERROR
-fX13a = market_flow("n1", "p1")
-fX13b = transfer_flow("n1", "p1")
+fX13a, fX13b = market_flow("n1", "p1")
+fX13c = transfer_flow("n1", "p1")
 
 # plain node - market node for all but MarketFlow types ERROR
 fX14a = transfer_flow("n1", "n8")
@@ -255,12 +256,12 @@ add_flows!(structure, [f2])
 @test structure.market_flows == []
 
 # add_flows! works for (node -> node) flows
-add_flows!(structure, [f4, f5a, f5b])
+add_flows!(structure, [f4, f5a, f5b, f5c, f5d])
 @test structure.transfer_flows == [f1, f2, f4]
-@test structure.market_flows == [f5a, f5b]
+@test structure.market_flows == [f5a, f5b, f5c, f5d]
 
 # add_flows! does not allow (market node - market node) flows
-@test_throws DomainError add_flows!(structure, [fX6])
+@test_throws DomainError add_flows!(structure, [fX6a])
 
 # add_flows! does not allow (process - process) flows
 @test_throws DomainError add_flows!(structure, [fX7])
@@ -277,8 +278,10 @@ add_flows!(structure, [f9, f10, f11a, f11b])
 @test_throws DomainError add_flows!(structure, [fX12a])
 @test_throws DomainError add_flows!(structure, [fX12b])
 @test_throws DomainError add_flows!(structure, [fX12c])
+@test_throws DomainError add_flows!(structure, [fX12d])
 @test_throws DomainError add_flows!(structure, [fX13a])
 @test_throws DomainError add_flows!(structure, [fX13b])
+@test_throws DomainError add_flows!(structure, [fX13c])
 @test_throws DomainError add_flows!(structure, [fX14a])
 @test_throws DomainError add_flows!(structure, [fX14b])
 
@@ -303,5 +306,5 @@ add_flows!(structure, [f16])
 @test validate_network(structure)
 
 # check all 11 non-erroneous flows were added
-@test length(get_flows(structure)) == 11
+@test length(get_flows(structure)) == 13
 

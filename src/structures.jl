@@ -283,7 +283,7 @@ function market_flow(source::Name, sink::Name)
         throw(DomainError("The source and sink of a flow cannot be the same."))
     end
 
-    MarketFlow(source, sink)
+    MarketFlow(source, sink), MarketFlow(sink, source)
 end
 
 # --- ModelStructure ---
