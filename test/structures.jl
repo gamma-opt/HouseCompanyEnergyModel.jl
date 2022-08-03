@@ -86,13 +86,12 @@ not_efficiency = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
 @info "Testing flows"
 # Process Flow
-@test isa(ProcessFlow("n1", "p1", time_series, 1.0, 0.1, 0.1), AbstractFlow)
-@test isa(process_flow("n1", "p1", time_series, S, T, 1.0, 0.1, 0.1), ProcessFlow)
-@test_throws DomainError process_flow("p1", "p1", not_time_series, S, T, 1.0, 0.1, 0.1)
-@test_throws DomainError process_flow("n1", "p1", not_time_series, S, T, 1.0, 0.1, 0.1)
-# test incorrect ramp values
-@test_throws DomainError process_flow("n1", "p1", time_series, S, T, 1.0, 2.0, 0.1)  
-@test_throws DomainError process_flow("n1", "p1", time_series, S, T, 1.0, 0.1, 2.0)
+@test isa(ProcessFlow("n1", "p1", time_series, 1.0, 0.1), AbstractFlow)
+@test isa(process_flow("n1", "p1", time_series, S, T, 1.0, 0.1), ProcessFlow)
+@test_throws DomainError process_flow("p1", "p1", not_time_series, S, T, 1.0, 0.1)
+@test_throws DomainError process_flow("n1", "p1", not_time_series, S, T, 1.0, 0.1)
+# test incorrect ramp rate value
+@test_throws DomainError process_flow("n1", "p1", time_series, S, T, 1.0, 2.0)  
 
 # Transfer Flow
 @test isa(TransferFlow("n1", "n2"), AbstractFlow)
@@ -192,7 +191,7 @@ f2 = transfer_flow("n2", "n3")
 
 # node/process - commodity node ERROR
 fX3a = transfer_flow("n2", "n5")
-fX3b = process_flow("p3", "n5", time_series, S, T, 1.0, 0.1, 0.1)
+fX3b = process_flow("p3", "n5", time_series, S, T, 1.0, 0.1)
 
 # commodity node - node
 f4 = transfer_flow("n5", "n2")
@@ -205,28 +204,28 @@ f5c, f5d = market_flow("n3", "n8")
 fX6a, fX6b = market_flow("n8", "n7")
 
 # process - process ERROR
-fX7 = process_flow("p1", "p6", time_series, S, T, 1.0, 0.1, 0.1)
+fX7 = process_flow("p1", "p6", time_series, S, T, 1.0, 0.1)
 
 # node - cf process ERROR
-fX8a = process_flow("n3", "p3", time_series, S, T, 1.0, 0.1, 0.1)
-fX8b = process_flow("n4", "p3", time_series, S, T, 1.0, 0.1, 0.1)
+fX8a = process_flow("n3", "p3", time_series, S, T, 1.0, 0.1)
+fX8b = process_flow("n4", "p3", time_series, S, T, 1.0, 0.1)
 
 # node - plain process
-f9 = process_flow("n6", "p1", time_series, S, T, 1.0, 0.1, 0.1)
+f9 = process_flow("n6", "p1", time_series, S, T, 1.0, 0.1)
 
 # cf process - plain node
-f10 = process_flow("p3", "n2", time_series, S, T, 1.0, 0.1, 0.1)
+f10 = process_flow("p3", "n2", time_series, S, T, 1.0, 0.1)
 
 # node - online process
-f11a = process_flow("n5", "p5", time_series, S, T, 1.0, 0.1, 0.1)
+f11a = process_flow("n5", "p5", time_series, S, T, 1.0, 0.1)
 # online process - storage node
-f11b = process_flow("p6", "n3", time_series, S, T, 1.0, 0.1, 0.1)
+f11b = process_flow("p6", "n3", time_series, S, T, 1.0, 0.1)
 
 # Flows for testing flow type specific constraints
 # market node - plain process for all flow types ERROR
 fX12a, fX12b = market_flow("n7", "p1")
 fX12c = transfer_flow("n7", "p1")
-fX12d = process_flow("n7", "p1", time_series, S, T, 1.0, 0.1, 0.1)
+fX12d = process_flow("n7", "p1", time_series, S, T, 1.0, 0.1)
 
 # plain process - plain node for all but ProcessFlow types ERROR
 fX13a, fX13b = market_flow("n1", "p1")
@@ -234,7 +233,7 @@ fX13c = transfer_flow("n1", "p1")
 
 # plain node - market node for all but MarketFlow types ERROR
 fX14a = transfer_flow("n1", "n8")
-fX14b = process_flow("n1", "n8",  time_series, S, T, 1.0, 0.1, 0.1)
+fX14b = process_flow("n1", "n8",  time_series, S, T, 1.0, 0.1)
 
 
 # add_flows! works for (node -> node) flows
@@ -292,14 +291,14 @@ add_flows!(structure, [f9, f10, f11a, f11b])
 @test_throws DomainError validate_network(structure)
 
 # add storage node - plain process to include n4
-f15 = process_flow("n4", "p2", time_series, S, T, 1.0, 0.1, 0.1)
+f15 = process_flow("n4", "p2", time_series, S, T, 1.0, 0.1)
 add_flows!(structure, [f15])
 
 # validate_network does not work when node p4 not connected
 @test_throws DomainError validate_network(structure)
 
 # add cf process - storage node to include p4
-f16 = process_flow("p4", "n4", time_series, S, T, 1.0, 0.1, 0.1)
+f16 = process_flow("p4", "n4", time_series, S, T, 1.0, 0.1)
 add_flows!(structure, [f16])
 
 # validate_network works
