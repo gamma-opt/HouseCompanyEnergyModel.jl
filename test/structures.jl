@@ -210,7 +210,7 @@ fX7 = process_flow("p1", "p6", time_series, S, T, 1.0, 0.1)
 fX8a = process_flow("n3", "p3", time_series, S, T, 1.0, 0.1)
 fX8b = process_flow("n4", "p3", time_series, S, T, 1.0, 0.1)
 
-# node - plain process
+# commodity node - plain process
 f9 = process_flow("n6", "p1", time_series, S, T, 1.0, 0.1)
 
 # cf process - plain node
@@ -291,7 +291,7 @@ add_flows!(structure, [f9, f10, f11a, f11b])
 @test_throws DomainError validate_network(structure)
 
 # add storage node - plain process to include n4
-f15 = process_flow("n4", "p2", time_series, S, T, 1.0, 0.1)
+f15 = process_flow("p2", "n4", time_series, S, T, 1.0, 0.1)
 add_flows!(structure, [f15])
 
 # validate_network does not work when node p4 not connected
