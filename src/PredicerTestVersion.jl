@@ -60,5 +60,5 @@ export TimeSteps,
     process_ramp_rate_constraints,
     process_efficiency_constraints,
     online_functionality_constraints,
-    bidding_constraints
+    market_bidding_constraints
 end 
