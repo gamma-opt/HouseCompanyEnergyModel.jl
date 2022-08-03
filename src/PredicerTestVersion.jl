@@ -1,7 +1,8 @@
 module PredicerTestVersion
 
 include("structures.jl")
-include("model.jl")
+include("variables.jl")
+include("constraints.jl")
 
 export TimeSteps,
     time_steps,
@@ -43,5 +44,21 @@ export TimeSteps,
     add_nodes!,
     add_processes!,
     add_flows!,
-    validate_network
+    validate_network,
+
+    FlowTuple,
+    flow_variables,
+    NodeTuple,
+    state_variables,
+    shortage_surplus_variables,
+    ProcessTuple,
+    start_stop_online_variables,
+
+    initial_state_constraints,
+    charging_discharging_constraints,
+    process_flow_bound_constraints,
+    process_ramp_rate_constraints,
+    process_efficiency_constraints,
+    online_functionality_constraints,
+    bidding_constraints
 end 
