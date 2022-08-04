@@ -242,7 +242,6 @@ struct TransferFlow <: AbstractFlow
 end
 
 function transfer_flow(source::Name, sink::Name)
-
     if source == sink
         throw(DomainError("The source and sink of a flow cannot be the same."))
     end
@@ -256,25 +255,24 @@ end
         sink::Name
     end
 
-Flow structure for two directional transfer of energy between two nodes. 
-
-The source and sink are treated identically meaning the connected nodes can be inserted either way around.
-
-!!! note
-    Either source or sink has to be the name of a MarketNode.
+Flow structure for transfer of energy between a market node and another node.
 """
 struct MarketFlow <: AbstractFlow
     source::Name
     sink::Name
 end
 
-function market_flow(source::Name, sink::Name)
+"""
+    function market_flow(market::Name, node::Name)
 
-    if source == sink
+Return MarketFlow structures for (bought energy, returned energy) between the market node and another node.
+"""
+function market_flow(market::Name, node::Name)
+    if market == node
         throw(DomainError("The source and sink of a flow cannot be the same."))
     end
 
-    MarketFlow(source, sink), MarketFlow(sink, source)
+    MarketFlow(market, node), MarketFlow(node, market)
 end
 
 # --- ModelStructure ---
