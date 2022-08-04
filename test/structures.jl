@@ -50,8 +50,12 @@ not_time_series = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5]]
 @info "Testing processes"
 # time series and values [0,1]
 efficiency = [[0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1]]
+# time series and values [0,1]
+cf = [[0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1]]
 # time series and values not [0,1]
 not_efficiency = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
+# time series and values not [0,1]
+not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
 # Plain process 1
 @test isa(PlainUnitProcess("p1", not_time_series), PlainUnitProcess)
@@ -62,14 +66,12 @@ not_efficiency = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 @test_throws DomainError plain_unit_process("p1", not_efficiency, S , T)
 
 # CF process 2
-@test isa(CFUnitProcess("p2", not_time_series, not_time_series), CFUnitProcess)
-@test isa(CFUnitProcess("p2", efficiency, efficiency), CFUnitProcess)
-@test isa(cf_unit_process("p2", efficiency, efficiency, S, T), AbstractProcess)
-@test isa(cf_unit_process("p2", efficiency, efficiency, S, T), CFUnitProcess)
-@test_throws DomainError cf_unit_process("p2", not_time_series, efficiency, S , T)
-@test_throws DomainError cf_unit_process("p2", not_efficiency, efficiency, S , T)
-@test_throws DomainError cf_unit_process("p2", efficiency, not_time_series, S , T)
-@test_throws DomainError cf_unit_process("p2", efficiency, not_efficiency, S , T)
+@test isa(CFUnitProcess("p2", not_time_series), CFUnitProcess)
+@test isa(CFUnitProcess("p2", cf), CFUnitProcess)
+@test isa(cf_unit_process("p2", cf, S, T), AbstractProcess)
+@test isa(cf_unit_process("p2", cf, S, T), CFUnitProcess)
+@test_throws DomainError cf_unit_process("p2", not_time_series, S , T)
+@test_throws DomainError cf_unit_process("p2", not_cf, S , T)
 
 # Online process 3
 @test isa(OnlineUnitProcess("p3", not_time_series, 0.1, 1, 1, 1.1, 2), OnlineUnitProcess)
@@ -150,8 +152,8 @@ add_nodes!(structure, [n4, n6, n8])
 # example processes, two of each type
 p1 = plain_unit_process("p1", efficiency, S, T)
 p2 = plain_unit_process("p2", efficiency, S, T)
-p3 = cf_unit_process("p3", efficiency, efficiency, S, T)
-p4 = cf_unit_process("p4", efficiency, efficiency, S, T)
+p3 = cf_unit_process("p3", cf, S, T)
+p4 = cf_unit_process("p4", cf, S, T)
 p5 = online_unit_process("p5", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
 p6 = online_unit_process("p6", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
 pn1 = plain_unit_process("n1", efficiency, S, T)

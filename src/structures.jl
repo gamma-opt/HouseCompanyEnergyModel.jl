@@ -143,21 +143,17 @@ end
 
 struct CFUnitProcess <: AbstractProcess
     name::Name
-    efficiency::TimeSeries
     cf::TimeSeries
 end
 
-function cf_unit_process(name::Name, efficiency::TimeSeries, cf::TimeSeries, S::Scenarios, T::TimeSteps)
-    validate_time_series(efficiency, S, T)
+function cf_unit_process(name::Name, cf::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(cf, S, T)
-    if !all(0 <= efficiency[s][t] <= 1 for s in S, t in T)
-        throw(DomainError("Efficiency values must be between 0 and 1."))
-    end
+
     if !all(0 <= cf[s][t] <= 1 for s in S, t in T)
         throw(DomainError("Capacity factor values must be between 0 and 1."))
     end
 
-    CFUnitProcess(name, efficiency, cf)
+    CFUnitProcess(name, cf)
 end
 
 struct OnlineUnitProcess <: AbstractProcess
