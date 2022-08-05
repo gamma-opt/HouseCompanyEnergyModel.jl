@@ -109,7 +109,8 @@ not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
 
 @info "Testing model structure"
-structure = ModelStructure(scenarios(3), time_steps(5))
+@test_throws DomainError ModelStructure(scenarios(3), time_steps(5), [0.5, 0.5, 0.5])
+structure = ModelStructure(scenarios(3), time_steps(5), [0.4, 0.3, 0.3])
 @test isa(structure, ModelStructure)
 
 

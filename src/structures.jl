@@ -303,6 +303,7 @@ Struct containing the scenarios, timesteps, nodes, processes and flows in the mo
 mutable struct ModelStructure
     S::Scenarios
     T::TimeSteps
+    scenario_probabilities::Vector{Float64}
     plain_nodes::Vector{PlainNode}
     storage_nodes::Vector{StorageNode}
     commodity_nodes::Vector{CommodityNode}
@@ -314,8 +315,12 @@ mutable struct ModelStructure
     transfer_flows::Vector{TransferFlow}
     market_flows::Vector{MarketFlow}
 
-    function ModelStructure(S::Scenarios, T::TimeSteps)
-        new(S, T, [], [], [], [], [], [], [], [], [], [])
+    function ModelStructure(S::Scenarios, T::TimeSteps, scenario_probabilities::Vector{Float64})
+        if isapprox(sum(scenario_probabilities), 1.0) && length(scenario_probabilities) == length(S)
+            new(S, T, scenario_probabilities, [], [], [], [], [], [], [], [], [], [])
+        else
+            throw(DomainError("Scenario probabilities must sum to 1.0 and there must be a probability for each scenario."))
+        end
     end
 end
 

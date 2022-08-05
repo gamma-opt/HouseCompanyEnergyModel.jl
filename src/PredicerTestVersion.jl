@@ -3,6 +3,7 @@ module PredicerTestVersion
 include("structures.jl")
 include("variables.jl")
 include("constraints.jl")
+include("objective.jl")
 
 export TimeSteps,
     time_steps,
@@ -60,5 +61,7 @@ export TimeSteps,
     process_ramp_rate_constraints,
     process_efficiency_constraints,
     online_functionality_constraints,
-    market_bidding_constraints
+    market_bidding_constraints,
+
+    declare_objective
 end 

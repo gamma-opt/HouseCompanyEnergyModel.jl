@@ -1,6 +1,6 @@
 using JuMP
 # recreating the structure from structures.jl tests.
-structure = ModelStructure(scenarios(3), time_steps(5))
+structure = ModelStructure(scenarios(3), time_steps(5), [0.4, 0.3, 0.3])
 
 time_series = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 efficiency = [[0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1]]
