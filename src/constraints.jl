@@ -2,9 +2,8 @@ using JuMP
 
 # -- Storage constraints --
 # Charging and discharging storage constraint
-function charging_discharging_constraints(model::Model, 
-    state_variables::Dict{NodeTuple, VariableRef}, 
-    structure::ModelStructure)
+function charging_discharging_constraints(model::Model, structure::ModelStructure,
+    state_variables::Dict{NodeTuple, VariableRef})
 
     # charging and discharging constraints only declared for time steps from 2nd to last
     T_tail = 2:length(structure.T)
@@ -26,8 +25,8 @@ function charging_discharging_constraints(model::Model,
 end
 
 function state_balance_constraints(model::Model, structure::ModelStructure, 
-    state_variables::Dict{NodeTuple, VariableRef},
     flow_variables::Dict{FlowTuple, VariableRef},
+    state_variables::Dict{NodeTuple, VariableRef},
     shortage_variables::Dict{NodeTuple, VariableRef},
     surplus_variables::Dict{NodeTuple, VariableRef})
 
@@ -77,10 +76,9 @@ function state_balance_constraints(model::Model, structure::ModelStructure,
 end
 
 # -- Energy flow through unit type processes upper and lower bound constraints --
-function process_flow_bound_constraints(model::Model,
+function process_flow_bound_constraints(model::Model, structure::ModelStructure,
     flow_variables::Dict{FlowTuple, VariableRef},
-    online_variables::Dict{ProcessTuple, VariableRef}, 
-    structure::ModelStructure)
+    online_variables::Dict{ProcessTuple, VariableRef})
 
     # Names of different process types for easy access in constraint generation
     plain_processes = [p.name for p in structure.plain_processes]
@@ -132,11 +130,10 @@ end
 
 
 # -- Ramp rate of plain and online processes constraints --
-function process_ramp_rate_constraints(model::Model, 
+function process_ramp_rate_constraints(model::Model, structure::ModelStructure, 
     flow_variables::Dict{FlowTuple, VariableRef},
     start_variables::Dict{ProcessTuple, VariableRef},
-    stop_variables::Dict{ProcessTuple, VariableRef}, 
-    structure::ModelStructure)
+    stop_variables::Dict{ProcessTuple, VariableRef})
 
     # Names of different process types for easy access in constraint generation
     plain_processes = [p.name for p in structure.plain_processes]
@@ -183,9 +180,8 @@ function process_ramp_rate_constraints(model::Model,
 end
 
 # -- Process efficiency constraints --
-function process_efficiency_constraints(model::Model, 
-    flow_variables::Dict{FlowTuple, VariableRef},
-    structure::ModelStructure)
+function process_efficiency_constraints(model::Model, structure::ModelStructure, 
+    flow_variables::Dict{FlowTuple, VariableRef})
 
     # Efficiency constraints apply to plain and online processes
     processes = [structure.plain_processes..., structure.online_processes...]
@@ -212,11 +208,10 @@ function process_efficiency_constraints(model::Model,
 end
 
 # -- Online/offline functionality constraints --
-function online_functionality_constraints(model::Model, 
+function online_functionality_constraints(model::Model, structure::ModelStructure,
     start_variables::Dict{NodeTuple, VariableRef},
     stop_variables::Dict{NodeTuple, VariableRef},
-    online_variables::Dict{NodeTuple, VariableRef},
-    structure::ModelStructure)
+    online_variables::Dict{NodeTuple, VariableRef})
 
     # Find last time step for ease in constraint generation
     t_max = length(structure.T)
@@ -271,9 +266,8 @@ function online_functionality_constraints(model::Model,
 end
 
 # -- Energy market bidding constraints --
-function market_bidding_constraints(model::Model, 
-    flow_variables::Dict{FlowTuple, VariableRef},
-    structure::ModelStructure)
+function market_bidding_constraints(model::Model, structure::ModelStructure,
+    flow_variables::Dict{FlowTuple, VariableRef})
 
     # Dictionary for constraints, to be returned from function
     bidding_constraints = Dict{NodeTuple, Vector{ConstraintRef}}()
