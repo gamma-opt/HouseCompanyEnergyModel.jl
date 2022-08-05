@@ -12,7 +12,6 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 start, stop, online = start_stop_online_variables(model, structure)
 
 # Constraint generation
-c1 = initial_state_constraints(model, s, structure)
 c2,c3 = charging_discharging_constraints(model, s, structure)
 c4 = process_flow_bound_constraints(model, f, online, structure)
 c5 = process_ramp_rate_constraints(model, f, start, stop, structure)

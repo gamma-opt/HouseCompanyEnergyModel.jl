@@ -1,41 +1,6 @@
 using JuMP
 
 # -- Storage constraints --
-
-# Initial state constraint
-function initial_state_constraints(model::Model, 
-    state_variables::Dict{NodeTuple, VariableRef}, 
-    structure::ModelStructure)
-
-    # Dictionary of constraints, to be returned from function 
-    constraints = Dict{NodeTuple, ConstraintRef}()
-
-    # Generating initial state constraints
-    for n in structure.storage_nodes, s in structure.S
-        c = @constraint(model, state_variables[n.name, 1, s] == n.initial_state, base_name="initial_state_constraint[$(n.name), s$s]")
-
-        constraints[n.name, 1, s] = c
-    end
-
-    constraints
-end
-
-# function initial_state_constraints(model::Model, 
-#     state_variables::Dict{NodeTuple, VariableRef}, 
-#     structure::ModelStructure)
-
-#     # storage node names and scnearios
-#     names = [n.name for n in structure.storage_nodes]
-#     S = structure.S
-
-#     # Dictionary name => initial_state for easy access in constraint generation
-#     initial_states = Dict(map(n -> (n.name => n.initial_state), structure.storage_nodes))
-    
-
-#     @constraint(model, [n in names, s in S], state_variables[n, 1, s] == initial_states[n])
-
-# end
-
 # Charging and discharging storage constraint
 function charging_discharging_constraints(model::Model, 
     state_variables::Dict{NodeTuple, VariableRef}, 
