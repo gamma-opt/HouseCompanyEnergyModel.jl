@@ -12,12 +12,13 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 start, stop, online = start_stop_online_variables(model, structure)
 
 # Constraint generation
-c2,c3 = charging_discharging_constraints(model, s, structure)
-c4 = process_flow_bound_constraints(model, f, online, structure)
-c5 = process_ramp_rate_constraints(model, f, start, stop, structure)
-c6 = process_efficiency_constraints(model, f, structure)
-c7, c8, c9 = online_functionality_constraints(model, start, stop, online, structure)
-c10 = market_bidding_constraints(model, f, structure)
+c1,c2 = charging_discharging_constraints(model, structure, s)
+c3 = state_balance_constraints(model, structure, f, s, shortage, surplus)
+c4 = process_flow_bound_constraints(model, structure, f, online)
+c5 = process_ramp_rate_constraints(model, structure, f, start, stop)
+c6 = process_efficiency_constraints(model, structure, f)
+c7, c8, c9 = online_functionality_constraints(model, structure, start, stop, online)
+c10 = market_bidding_constraints(model, structure, f)
 
 
 optimizer = optimizer_with_attributes(
