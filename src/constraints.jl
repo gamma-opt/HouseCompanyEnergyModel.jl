@@ -25,6 +25,57 @@ function charging_discharging_constraints(model::Model,
     charging_constraints, discharging_constraints
 end
 
+function state_balance_constraints(model::Model, structure::ModelStructure, 
+    state_variables::Dict{NodeTuple, VariableRef},
+    flow_variables::Dict{FlowTuple, VariableRef},
+    shortage_variables::Dict{NodeTuple, VariableRef},
+    surplus_variables::Dict{NodeTuple, VariableRef})
+
+    # Get all flows from structure into one variable for ease of use
+    flows = get_flows(structure)
+
+    # Plain nodes and storage nodes are the only ones were balance is maintained (not in commodity or market nodes)
+    balance_nodes = [structure.plain_nodes..., structure.storage_nodes...]
+
+    # Dictionary of constraints, to be returned from function 
+    balance_constraints = Dict{NodeTuple, ConstraintRef}()
+
+    # Generate balance equation for storage nodes. Note: plain nodes don't have storage, thus LHS=0
+    for n in balance_nodes, s in structure.S, t in structure.T
+
+        output_flows = filter(f -> f.source == n.name, flows)
+        output_flows = map(f -> (f.source, f.sink), output_flows)
+
+        input_flows = filter(f -> f.sink == n.name, flows)
+        input_flows = map(f -> (f.source, f.sink), input_flows)
+
+        # Declare left hand side of constraint
+        if isa(n, PlainNode)
+            # Plain nodes don't have storage, thus LHS=0
+            LHS = @expression(model, 0.0)
+        else
+            # for storage node if t ==1 then state(n, s, t-1) = initial state
+            if t == 1
+                LHS = @expression(model, state_variables[n.name, t, s] - (1-n.state_loss) * n.initial_state)
+            else
+                LHS = @expression(model, state_variables[n.name, t, s] - (1-n.state_loss) * state_variables[n.name, t-1, s])
+            end
+        end
+
+        # Declare constraint
+        c = @constraint(model, LHS
+                            == sum(flow_variables[i, j, t, s] for (i,j) in input_flows)
+                            - sum(flow_variables[i, j, t, s] for (i,j) in output_flows)
+                            + n.external_flow[s][t]
+                            + shortage_variables[n.name, t, s]
+                            - surplus_variables[n.name, t, s])
+        
+        balance_constraints[n.name, t, s] = c
+    end
+
+    balance_constraints
+end
+
 # -- Energy flow through unit type processes upper and lower bound constraints --
 function process_flow_bound_constraints(model::Model,
     flow_variables::Dict{FlowTuple, VariableRef},

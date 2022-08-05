@@ -55,6 +55,7 @@ export TimeSteps,
     start_stop_online_variables,
 
     charging_discharging_constraints,
+    state_balance_constraints,
     process_flow_bound_constraints,
     process_ramp_rate_constraints,
     process_efficiency_constraints,
