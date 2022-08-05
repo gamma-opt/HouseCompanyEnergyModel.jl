@@ -93,9 +93,9 @@ end
 """
     function shortage_surplus_variables(model::Model, structure::ModelStructure)
 
-Declare shortage and surplus JuMP variables for all storage nodes with lower bounds declared.
+Declare shortage and surplus JuMP variables for all plain and storage nodes with lower bounds declared.
 
-    Return shortage and surplus variables in Dict{NodeTuple, VariableRef}, Dict{NodeTuple, VariableRef} format.
+Return shortage and surplus variables in Dict{NodeTuple, VariableRef}, Dict{NodeTuple, VariableRef} format.
 """
 function shortage_surplus_variables(model::Model, structure::ModelStructure)
     # scerios and time steps
@@ -105,7 +105,10 @@ function shortage_surplus_variables(model::Model, structure::ModelStructure)
     shortage_variables = Dict{NodeTuple, VariableRef}()
     surplus_variables = Dict{NodeTuple, VariableRef}()
    
-    for n in structure.storage_nodes, s in S, t in T
+    # plain nodes and storage nodes are the only ones were balance is maintained (not in commodity or market nodes)
+    balance_nodes = [structure.plain_nodes..., structure.storage_nodes...]
+
+    for n in balance_nodes, s in S, t in T
 
         # create variable with readable name of form f(source, sink, t, s)
         v_shortage = @variable(model, base_name = string("shortage($(n.name), t$t, s$s)"))
@@ -114,7 +117,7 @@ function shortage_surplus_variables(model::Model, structure::ModelStructure)
         @constraint(model, v_shortage ≥ 0)
         @constraint(model, v_surplus ≥ 0)
         
-        # add variable to dictionary for easy access
+        # add variables to dictionaries for easy access
         shortage_variables[(n.name, t, s)] = v_shortage
         surplus_variables[(n.name, t, s)] = v_surplus
     end
