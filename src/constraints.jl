@@ -26,9 +26,9 @@ end
 
 function state_balance_constraints(model::Model, structure::ModelStructure, 
     flow_variables::Dict{FlowTuple, VariableRef},
-    state_variables::Dict{NodeTuple, VariableRef},
     shortage_variables::Dict{NodeTuple, VariableRef},
-    surplus_variables::Dict{NodeTuple, VariableRef})
+    surplus_variables::Dict{NodeTuple, VariableRef},
+    state_variables::Dict{NodeTuple, VariableRef} = Dict{NodeTuple, VariableRef}())
 
     # Get all flows from structure into one variable for ease of use
     flows = get_flows(structure)
@@ -78,7 +78,7 @@ end
 # -- Energy flow through unit type processes upper and lower bound constraints --
 function process_flow_bound_constraints(model::Model, structure::ModelStructure,
     flow_variables::Dict{FlowTuple, VariableRef},
-    online_variables::Dict{ProcessTuple, VariableRef})
+    online_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())
 
     # Names of different process types for easy access in constraint generation
     plain_processes = [p.name for p in structure.plain_processes]
@@ -132,8 +132,8 @@ end
 # -- Ramp rate of plain and online processes constraints --
 function process_ramp_rate_constraints(model::Model, structure::ModelStructure, 
     flow_variables::Dict{FlowTuple, VariableRef},
-    start_variables::Dict{ProcessTuple, VariableRef},
-    stop_variables::Dict{ProcessTuple, VariableRef})
+    start_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}(),
+    stop_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())
 
     # Names of different process types for easy access in constraint generation
     plain_processes = [p.name for p in structure.plain_processes]
