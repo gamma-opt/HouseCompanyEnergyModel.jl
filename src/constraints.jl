@@ -4,21 +4,30 @@ using JuMP
 # Charging and discharging storage constraint
 function charging_discharging_constraints(model::Model, structure::ModelStructure,
     state_variables::Dict{NodeTuple, VariableRef})
-
-    # charging and discharging constraints only declared for time steps from 2nd to last
-    T_tail = 2:length(structure.T)
     
     # Dictionaries of constraints, to be returned from function
     charging_constraints = Dict{NodeTuple, ConstraintRef}()
     discharging_constraints = Dict{NodeTuple, ConstraintRef}()
 
-    # Declare charging and discharging constraints for each storage node, time step (2:end) and scenario
-    for n in structure.storage_nodes, t in T_tail, s in structure.S
-        charging = @constraint(model, n.in_flow_max ≥ state_variables[n.name, s, t] - (1-n.state_loss) * state_variables[n.name, s, t-1])
-        charging_constraints[n.name, s, t] = charging
+    # Declare charging and discharging constraints for each storage node, time step and scenario
+    for n in structure.storage_nodes, t in structure.T, s in structure.S
 
-        discharging = @constraint(model, -n.out_flow_max ≤ state_variables[n.name, s, t] - (1-n.state_loss) * state_variables[n.name, s, t-1])
-        discharging_constraints[n.name, s, t] = discharging
+        # At first time step, the change in storage is calculated between state(t=1)-initial_state
+        if t == 1
+            charging = @constraint(model, n.in_flow_max ≥ state_variables[n.name, s, t] - (1-n.state_loss) * n.initial_state)
+            charging_constraints[n.name, s, t] = charging
+
+            discharging = @constraint(model, -n.out_flow_max ≤ state_variables[n.name, s, t] - (1-n.state_loss) * n.initial_state)
+            discharging_constraints[n.name, s, t] = discharging
+        
+        # At other time steps, the change in storage is calculated between state(t)-state(t-1)
+        else
+            charging = @constraint(model, n.in_flow_max ≥ state_variables[n.name, s, t] - (1-n.state_loss) * state_variables[n.name, s, t-1])
+            charging_constraints[n.name, s, t] = charging
+
+            discharging = @constraint(model, -n.out_flow_max ≤ state_variables[n.name, s, t] - (1-n.state_loss) * state_variables[n.name, s, t-1])
+            discharging_constraints[n.name, s, t] = discharging
+        end
     end
     
     charging_constraints, discharging_constraints
