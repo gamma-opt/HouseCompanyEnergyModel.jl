@@ -7,6 +7,9 @@ time_series = [[1,2,3], [5.0, 6, 1]]
 efficiency = [[0.1, 0.1, 0.1], [0.2, 0.2, 0.2]]
 cf = [[0.5, 0.5, 0.5], [0.1, 0.1, 0.1]]
 
+
+@info "\nObjective function:"
+
 @info "Commodity costs"
 # Declare test structure
 structure = ModelStructure(S, T, [0.1, 0.9])

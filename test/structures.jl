@@ -1,4 +1,5 @@
 
+@info "Structures:"
 @info "Testing time steps, scenarios and time series"
 T = time_steps(5)
 S = scenarios(3)

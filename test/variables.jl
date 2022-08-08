@@ -43,7 +43,7 @@ add_flows!(structure, [f1, f2, f4, f5a, f5b, f5c, f5d, f9, f10, f11a, f11b, f15,
 
 validate_network(structure)
 
-
+@info "\nVariable generation:"
 
 @info "Initialise JuMP Model"
 model = Model()
