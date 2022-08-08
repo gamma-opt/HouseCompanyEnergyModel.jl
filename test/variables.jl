@@ -9,8 +9,8 @@ cf = [[0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1,
 # example nodes, two of each type
 n1 = plain_node("n1", time_series, S, T)
 n2 = plain_node("n2", time_series, S, T)
-n3 = storage_node("n3", 1.0, 1.0, 1.0, 0.1, time_series, S, T, 0.3)
-n4 = storage_node("n4", 1.0, 1.0, 1.0, 0.1, time_series, S, T, 0.4)
+n3 = storage_node("n3", 1.0, 1.0, 4.0, 0.1, time_series, S, T, 0.3)
+n4 = storage_node("n4", 1.0, 1.0, 5.0, 0.1, time_series, S, T, 0.4)
 n5 = commodity_node("n5", time_series, S, T)
 n6 = commodity_node("n6", time_series, S, T)
 n7 = market_node("n7", time_series, S, T)
@@ -68,6 +68,10 @@ f = flow_variables(model, structure)
 # check only and exactly existing flows have variables
 @test issetequal( Set([(f[1], f[2]) for f in keys(f)]) , Set(get_flows(structure, names = true)))
 
+# Test lower bound
+@test all(lower_bound(f[flow.source, flow.sink, t, sce]) == 0.0 for flow in get_flows(structure), sce in S, t in T )
+
+
 
 
 @info "Testing state variables"
@@ -86,6 +90,11 @@ s = state_variables(model, structure)
 
 # check only and exactly existing storage nodes have variables
 @test issetequal( Set([n[1] for n in keys(s)]) , Set(["n3", "n4"]))
+
+# Test lower and upper bound
+@test all(upper_bound(s[n.name, t, sce]) == n.state_max for n in [n3, n4], sce in S, t in T )
+@test all(lower_bound(s[n.name, t, sce]) == 0.0 for n in [n3, n4], sce in S, t in T )
+
 
 
 
@@ -111,6 +120,10 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 # check only and exactly existing plain and storage nodes have variables
 @test issetequal( Set([n[1] for n in keys(shortage)]) , Set(["n1", "n2", "n3", "n4"]))
 @test issetequal( Set([n[1] for n in keys(surplus)]) , Set(["n1", "n2", "n3", "n4"]))
+
+# Test lower bound
+@test all(lower_bound(shortage[n.name, t, sce]) == 0.0 for n in [n3, n4], sce in S, t in T )
+@test all(lower_bound(surplus[n.name, t, sce]) == 0.0 for n in [n3, n4], sce in S, t in T )
 
 
 
@@ -143,3 +156,8 @@ start, stop, online = start_stop_online_variables(model, structure)
 @test issetequal( Set([p[1] for p in keys(start)]) , Set(["p5", "p6"]))
 @test issetequal( Set([p[1] for p in keys(stop)]) , Set(["p5", "p6"]))
 @test issetequal( Set([p[1] for p in keys(online)]) , Set(["p5", "p6"]))
+
+# Test lower bound
+@test all(is_binary(start[p.name, t, sce]) for p in [p5, p6], sce in S, t in T )
+@test all(is_binary(stop[p.name, t, sce]) for p in [p5, p6], sce in S, t in T )
+@test all(is_binary(online[p.name, t, sce]) for p in [p5, p6], sce in S, t in T )

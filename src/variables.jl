@@ -45,10 +45,9 @@ function flow_variables(model::Model, structure::ModelStructure)
     for f in flows, s in S, t in T
 
         # create variable with readable name of form f(source, sink, t, s)
-        v = @variable(model, base_name = string("f($(f.source), $(f.sink), t$t, s$s)"))
-        
-    
-        @constraint(model, v ≥ 0)
+        v = @variable(model, 
+        base_name = string("f($(f.source), $(f.sink), t$t, s$s)"),
+        lower_bound = 0)
 
         # add variable to dictionary for easy access
         flow_variables[(f.source, f.sink, t, s)] = v
@@ -75,12 +74,11 @@ function state_variables(model::Model, structure::ModelStructure)
         for n in structure.storage_nodes, s in S, t in T
     
             # create variable with readable name of form f(source, sink, t, s)
-            v = @variable(model, base_name = string("s($(n.name), t$t, s$s)"))
-            
-        
-            @constraint(model, v ≥ 0)
+            v = @variable(model, 
+                base_name = string("s($(n.name), t$t, s$s)"), 
+                lower_bound = 0, 
+                upper_bound = n.state_max)
 
-            @constraint(model, v ≤ n.state_max)
     
             # add variable to dictionary for easy access
             state_variables[(n.name, t, s)] = v
@@ -111,11 +109,12 @@ function shortage_surplus_variables(model::Model, structure::ModelStructure)
     for n in balance_nodes, s in S, t in T
 
         # create variable with readable name of form f(source, sink, t, s)
-        v_shortage = @variable(model, base_name = string("shortage($(n.name), t$t, s$s)"))
-        v_surplus = @variable(model, base_name = string("surplus($(n.name), t$t, s$s)"))
-
-        @constraint(model, v_shortage ≥ 0)
-        @constraint(model, v_surplus ≥ 0)
+        v_shortage = @variable(model, 
+                    base_name = string("shortage($(n.name), t$t, s$s)"), 
+                    lower_bound = 0)
+        v_surplus = @variable(model, 
+                    base_name = string("surplus($(n.name), t$t, s$s)"),
+                    lower_bound = 0)
         
         # add variables to dictionaries for easy access
         shortage_variables[(n.name, t, s)] = v_shortage
