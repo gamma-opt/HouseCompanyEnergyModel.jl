@@ -8,13 +8,13 @@ price = [[4.0, 4, 3], [6, 4, 2]]
 efficiency = [[0.1, 0.1, 0.1], [0.2, 0.2, 0.2]]
 cf = [[0.5, 0.5, 0.5], [0.1, 0.1, 0.1]]
 
+# Declare test structure
+structure = ModelStructure(S, T, [0.1, 0.9])
+
 
 @info "\nObjective function:"
 
 @info "Commodity costs"
-# Declare test structure
-structure = ModelStructure(S, T, [0.1, 0.9])
-
 n5 = commodity_node("n5", time_series, S, T)
 n6 = commodity_node("n6", time_series, S, T)
 n2 = plain_node("n2", time_series, S, T)
@@ -44,8 +44,8 @@ obj = declare_objective(model, structure, f, shortage, surplus, 100.0)
 @info "Market costs"
 n7 = market_node("n7", price, S, T)
 n8 = market_node("n8", price, S, T)
-n1 = plain_node("n1", price, S, T)
-n3 = storage_node("n3", 1.0, 1.0, 1.0, 0.1, price, S, T, 0.3)
+n1 = plain_node("n1", time_series, S, T)
+n3 = storage_node("n3", 1.0, 1.0, 1.0, 0.1, time_series, S, T, 0.3)
 f5a, f5b = market_flow("n1", "n7")
 f5c, f5d = market_flow("n3", "n8")
 
