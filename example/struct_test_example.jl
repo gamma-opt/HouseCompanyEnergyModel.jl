@@ -70,7 +70,7 @@ c10 = market_bidding_constraints(model, structure, f)
 
 
 # Objective function
-obj = declare_objective(model, structure, f, shortage, surplus)
+obj = declare_objective(model, structure, f, shortage, surplus, 100.0, start)
 
 # optimizer = optimizer_with_attributes(
 #     () -> Gurobi.Optimizer(Gurobi.Env()),
