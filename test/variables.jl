@@ -43,11 +43,9 @@ add_flows!(structure, [f1, f2, f4, f5a, f5b, f5c, f5d, f9, f10, f11a, f11b, f15,
 
 validate_network(structure)
 
-@info "\nVariable generation:"
-
-@info "Initialise JuMP Model"
 model = Model()
 
+@info "\nVariable generation:"
 
 
 @info "Testing flow variables"
@@ -58,18 +56,18 @@ f = flow_variables(model, structure)
 @test length(f) == 13*3*5
 
 @test isa(f["n1", "n2", 1, 2], VariableRef)
-@test isa(f["n1", "n2", 5, 3], VariableRef)
+@test isa(f["n1", "n2", 3, 5], VariableRef)
 
-@test string(f["n1", "n2", 2, 1]) == "f(n1, n2, t2, s1)"
+@test string(f["n1", "n2", 2, 1]) == "f(n1, n2, s2, t1)"
 
-# check the scenarios and time steps are in t, s order
-@test get(f, ["n1", "n2", 3, 5], 0.0) == 0.0
+# check the scenarios and time steps are in s, t order
+@test get(f, ("n1", "n2", 5, 3), 0.0) == 0.0
 
 # check only and exactly existing flows have variables
 @test issetequal( Set([(f[1], f[2]) for f in keys(f)]) , Set(get_flows(structure, names = true)))
 
 # Test lower bound
-@test all(lower_bound(f[flow.source, flow.sink, t, sce]) == 0.0 for flow in get_flows(structure), sce in S, t in T )
+@test all(lower_bound(f[flow.source, flow.sink, sce, t]) == 0.0 for flow in get_flows(structure), sce in S, t in T )
 
 
 
@@ -82,18 +80,18 @@ s = state_variables(model, structure)
 # check all storage nodes (2) have a variable
 @test length(s) == 2*3*5
 
-@test isa(s["n3", 5, 3], VariableRef)
-@test string(s["n4", 2, 1]) == "s(n4, t2, s1)"
+@test isa(s["n3", 3, 5], VariableRef)
+@test string(s["n4", 2, 1]) == "s(n4, s2, t1)"
 
-# check the scenarios and time steps are in t, s order
-@test get(s, ["n3", 3, 5], 0.0) == 0.0
+# check the scenarios and time steps are in s, t order
+@test get(s, ("n3", 5, 3), 0.0) == 0.0
 
 # check only and exactly existing storage nodes have variables
 @test issetequal( Set([n[1] for n in keys(s)]) , Set(["n3", "n4"]))
 
 # Test lower and upper bound
-@test all(upper_bound(s[n.name, t, sce]) == n.state_max for n in [n3, n4], sce in S, t in T )
-@test all(lower_bound(s[n.name, t, sce]) == 0.0 for n in [n3, n4], sce in S, t in T )
+@test all(upper_bound(s[n.name, sce, t]) == n.state_max for n in [n3, n4], sce in S, t in T )
+@test all(lower_bound(s[n.name, sce, t]) == 0.0 for n in [n3, n4], sce in S, t in T )
 
 
 
@@ -107,23 +105,23 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 @test length(surplus) == length(shortage)
 @test length(surplus) == (2+2)*3*5
 
-@test isa(shortage["n1", 5, 3], VariableRef)
-@test isa(surplus["n1", 5, 3], VariableRef)
+@test isa(shortage["n1", 3, 5], VariableRef)
+@test isa(surplus["n1", 3, 5], VariableRef)
 
-@test string(shortage["n2", 2, 1]) == "shortage(n2, t2, s1)"
-@test string(surplus["n2", 2, 1]) == "surplus(n2, t2, s1)"
+@test string(shortage["n2", 2, 1]) == "shortage(n2, s2, t1)"
+@test string(surplus["n2", 2, 1]) == "surplus(n2, s2, t1)"
 
-# check the scenarios and time steps are in t, s order
-@test get(shortage, ["n1", 3, 5], 0.0) == 0.0
-@test get(surplus, ["n1", 3, 5], 0.0) == 0.0
+# check the scenarios and time steps are in s, t order
+@test get(shortage, ("n1", 5, 3), 0.0) == 0.0
+@test get(surplus, ("n1", 5, 3), 0.0) == 0.0
 
 # check only and exactly existing plain and storage nodes have variables
 @test issetequal( Set([n[1] for n in keys(shortage)]) , Set(["n1", "n2", "n3", "n4"]))
 @test issetequal( Set([n[1] for n in keys(surplus)]) , Set(["n1", "n2", "n3", "n4"]))
 
 # Test lower bound
-@test all(lower_bound(shortage[n.name, t, sce]) == 0.0 for n in [n3, n4], sce in S, t in T )
-@test all(lower_bound(surplus[n.name, t, sce]) == 0.0 for n in [n3, n4], sce in S, t in T )
+@test all(lower_bound(shortage[n.name, sce, t]) == 0.0 for n in [n3, n4], sce in S, t in T )
+@test all(lower_bound(surplus[n.name, sce, t]) == 0.0 for n in [n3, n4], sce in S, t in T )
 
 
 
@@ -139,18 +137,18 @@ start, stop, online = start_stop_online_variables(model, structure)
 @test length(start) == length(online)
 @test length(start) == 2*3*5
 
-@test isa(start["p5", 5, 3], VariableRef)
-@test isa(stop["p6", 5, 3], VariableRef)
-@test isa(online["p5", 5, 3], VariableRef)
+@test isa(start["p5", 3, 5], VariableRef)
+@test isa(stop["p6", 3, 5], VariableRef)
+@test isa(online["p5", 3, 5], VariableRef)
 
-@test string(start["p6", 2, 1]) == "start(p6, t2, s1)"
-@test string(stop["p5", 2, 1]) == "stop(p5, t2, s1)"
-@test string(online["p6", 2, 1]) == "online(p6, t2, s1)"
+@test string(start["p6", 2, 1]) == "start(p6, s2, t1)"
+@test string(stop["p5", 2, 1]) == "stop(p5, s2, t1)"
+@test string(online["p6", 2, 1]) == "online(p6, s2, t1)"
 
-# check the scenarios and time steps are in t, s order
-@test get(start, ["p5", 3, 5], 0.0) == 0.0
-@test get(stop, ["p5", 3, 5], 0.0) == 0.0
-@test get(online, ["p5", 3, 5], 0.0) == 0.0
+# check the scenarios and time steps are in s, t order
+@test get(start, ("p5", 5, 3), 0.0) == 0.0
+@test get(stop, ("p5", 5, 3), 0.0) == 0.0
+@test get(online, ("p5", 5, 3), 0.0) == 0.0
 
 # check only and exactly existing online processes have variables
 @test issetequal( Set([p[1] for p in keys(start)]) , Set(["p5", "p6"]))
@@ -158,6 +156,6 @@ start, stop, online = start_stop_online_variables(model, structure)
 @test issetequal( Set([p[1] for p in keys(online)]) , Set(["p5", "p6"]))
 
 # Test lower bound
-@test all(is_binary(start[p.name, t, sce]) for p in [p5, p6], sce in S, t in T )
-@test all(is_binary(stop[p.name, t, sce]) for p in [p5, p6], sce in S, t in T )
-@test all(is_binary(online[p.name, t, sce]) for p in [p5, p6], sce in S, t in T )
+@test all(is_binary(start[p.name, sce, t]) for p in [p5, p6], sce in S, t in T )
+@test all(is_binary(stop[p.name, sce, t]) for p in [p5, p6], sce in S, t in T )
+@test all(is_binary(online[p.name, sce, t]) for p in [p5, p6], sce in S, t in T )

@@ -25,7 +25,7 @@ function declare_objective(model::Model, structure::ModelStructure,
         output_flows = filter(f -> f.source == n.name, flows)
 
         exp = @expression(model, sum(π[s]
-                                 * sum(n.cost[s][t] * flow_variables[f.source, f.sink, t, s] for f in output_flows, t in T)
+                                 * sum(n.cost[s][t] * flow_variables[f.source, f.sink, s, t] for f in output_flows, t in T)
                                  for s in S))
 
         push!(comm_node_costs, exp)
@@ -42,7 +42,7 @@ function declare_objective(model::Model, structure::ModelStructure,
         bought_energy = filter(f -> f.source == n.name, flows)
 
         exp = @expression(model, sum(π[s]
-                                 * sum(n.price[s][t] * flow_variables[f.source, f.sink, t, s] for f in bought_energy, t in T)
+                                 * sum(n.price[s][t] * flow_variables[f.source, f.sink, s, t] for f in bought_energy, t in T)
                                  for s in S))
 
         push!(market_buying, exp)
@@ -59,7 +59,7 @@ function declare_objective(model::Model, structure::ModelStructure,
         sold_energy = filter(f -> f.sink == n.name, flows)
 
         exp = @expression(model, sum(π[s]
-                                 * sum(n.price[s][t] * flow_variables[f.source, f.sink, t, s] for f in sold_energy, t in T)
+                                 * sum(n.price[s][t] * flow_variables[f.source, f.sink, s, t] for f in sold_energy, t in T)
                                  for s in S))
 
         push!(market_selling, exp)
@@ -69,18 +69,18 @@ function declare_objective(model::Model, structure::ModelStructure,
 
 
     # -- VOM costs --
-    vom_costs = @expression(model, sum(π[s] * f.VOM_cost * flow_variables[f. source, f.sink, t, s] 
+    vom_costs = @expression(model, sum(π[s] * f.VOM_cost * flow_variables[f. source, f.sink, s, t] 
                                     for f in structure.process_flows, t in T, s in S))
 
 
     # -- Start costs --
-    start_costs = @expression(model, sum(π[s] *  p.start_cost * start_variables[p.name, t, s] 
+    start_costs = @expression(model, sum(π[s] *  p.start_cost * start_variables[p.name, s, t] 
                                     for p in structure.online_processes, t in T, s in S))
 
 
     # -- Penalty costs --
     balance_nodes = [structure.plain_nodes..., structure.storage_nodes...]
-    penalty_cost = @expression(model, sum(π[s] * penalty * (shortage_variables[n.name, t, s] + surplus_variables[n.name, t, s])
+    penalty_cost = @expression(model, sum(π[s] * penalty * (shortage_variables[n.name, s, t] + surplus_variables[n.name, s, t])
                                     for n in balance_nodes, t in T, s in S))
 
 

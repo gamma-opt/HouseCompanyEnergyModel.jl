@@ -44,13 +44,13 @@ function flow_variables(model::Model, structure::ModelStructure)
 
     for f in flows, s in S, t in T
 
-        # create variable with readable name of form f(source, sink, t, s)
+        # create variable with readable name of form f(source, sink, s, t)
         v = @variable(model, 
-        base_name = string("f($(f.source), $(f.sink), t$t, s$s)"),
+        base_name = string("f($(f.source), $(f.sink), s$s, t$t)"),
         lower_bound = 0)
 
         # add variable to dictionary for easy access
-        flow_variables[(f.source, f.sink, t, s)] = v
+        flow_variables[(f.source, f.sink, s, t)] = v
     end
 
     flow_variables
@@ -73,15 +73,15 @@ function state_variables(model::Model, structure::ModelStructure)
     
         for n in structure.storage_nodes, s in S, t in T
     
-            # create variable with readable name of form f(source, sink, t, s)
+            # create variable with readable name of form f(source, sink, s, t)
             v = @variable(model, 
-                base_name = string("s($(n.name), t$t, s$s)"), 
+                base_name = string("s($(n.name), s$s, t$t)"), 
                 lower_bound = 0, 
                 upper_bound = n.state_max)
 
     
             # add variable to dictionary for easy access
-            state_variables[(n.name, t, s)] = v
+            state_variables[(n.name, s, t)] = v
         end
     
         state_variables
@@ -108,17 +108,17 @@ function shortage_surplus_variables(model::Model, structure::ModelStructure)
 
     for n in balance_nodes, s in S, t in T
 
-        # create variable with readable name of form f(source, sink, t, s)
+        # create variable with readable name of form f(source, sink, s, t)
         v_shortage = @variable(model, 
-                    base_name = string("shortage($(n.name), t$t, s$s)"), 
+                    base_name = string("shortage($(n.name), s$s, t$t)"), 
                     lower_bound = 0)
         v_surplus = @variable(model, 
-                    base_name = string("surplus($(n.name), t$t, s$s)"),
+                    base_name = string("surplus($(n.name), s$s, t$t)"),
                     lower_bound = 0)
         
         # add variables to dictionaries for easy access
-        shortage_variables[(n.name, t, s)] = v_shortage
-        surplus_variables[(n.name, t, s)] = v_surplus
+        shortage_variables[(n.name, s, t)] = v_shortage
+        surplus_variables[(n.name, s, t)] = v_surplus
     end
 
     shortage_variables, surplus_variables
@@ -143,15 +143,15 @@ function start_stop_online_variables(model::Model, structure::ModelStructure)
 
     for p in structure.online_processes, s in S, t in T
 
-        # create variable with readable name of form f(source, sink, t, s)
-        v_start = @variable(model, base_name = string("start($(p.name), t$t, s$s)"), binary = true)
-        v_stop = @variable(model, base_name = string("stop($(p.name), t$t, s$s)"), binary = true)
-        v_online = @variable(model, base_name = string("online($(p.name), t$t, s$s)"), binary = true)
+        # create variable with readable name of form f(source, sink, s, t)
+        v_start = @variable(model, base_name = string("start($(p.name), s$s, t$t)"), binary = true)
+        v_stop = @variable(model, base_name = string("stop($(p.name), s$s, t$t)"), binary = true)
+        v_online = @variable(model, base_name = string("online($(p.name), s$s, t$t)"), binary = true)
     
         # add variable to dictionary for easy access
-        start_variables[(p.name, t, s)] = v_start
-        stop_variables[(p.name, t, s)] = v_stop
-        online_variables[(p.name, t, s)] = v_online
+        start_variables[(p.name, s, t)] = v_start
+        stop_variables[(p.name, s, t)] = v_stop
+        online_variables[(p.name, s, t)] = v_online
     end
 
     start_variables, stop_variables, online_variables

@@ -14,11 +14,11 @@ function charging_discharging_constraints(model::Model, structure::ModelStructur
 
     # Declare charging and discharging constraints for each storage node, time step (2:end) and scenario
     for n in structure.storage_nodes, t in T_tail, s in structure.S
-        charging = @constraint(model, n.in_flow_max ≥ state_variables[n.name,t,s] - (1-n.state_loss) * state_variables[n.name,t-1,s], base_name="charge_constraint[$(n.name), t$t, s$s]")
-        charging_constraints[n.name, t, s] = charging
+        charging = @constraint(model, n.in_flow_max ≥ state_variables[n.name, s, t] - (1-n.state_loss) * state_variables[n.name, s, t-1])
+        charging_constraints[n.name, s, t] = charging
 
-        discharging = @constraint(model, -n.out_flow_max ≤ state_variables[n.name,t,s] - (1-n.state_loss) * state_variables[n.name,t-1,s])
-        discharging_constraints[n.name, t, s] = discharging
+        discharging = @constraint(model, -n.out_flow_max ≤ state_variables[n.name, s, t] - (1-n.state_loss) * state_variables[n.name, s, t-1])
+        discharging_constraints[n.name, s, t] = discharging
     end
     
     charging_constraints, discharging_constraints
@@ -55,21 +55,21 @@ function state_balance_constraints(model::Model, structure::ModelStructure,
         else
             # for storage node if t ==1 then state(n, s, t-1) = initial state
             if t == 1
-                LHS = @expression(model, state_variables[n.name, t, s] - (1-n.state_loss) * n.initial_state)
+                LHS = @expression(model, state_variables[n.name, s, t] - (1-n.state_loss) * n.initial_state)
             else
-                LHS = @expression(model, state_variables[n.name, t, s] - (1-n.state_loss) * state_variables[n.name, t-1, s])
+                LHS = @expression(model, state_variables[n.name, s, t] - (1-n.state_loss) * state_variables[n.name, s, t-1])
             end
         end
 
         # Declare constraint
         c = @constraint(model, LHS
-                            == sum(flow_variables[i, j, t, s] for (i,j) in input_flows)
-                            - sum(flow_variables[i, j, t, s] for (i,j) in output_flows)
+                            == sum(flow_variables[i, j, s, t] for (i,j) in input_flows)
+                            - sum(flow_variables[i, j, s, t] for (i,j) in output_flows)
                             + n.external_flow[s][t]
-                            + shortage_variables[n.name, t, s]
-                            - surplus_variables[n.name, t, s])
+                            + shortage_variables[n.name, s, t]
+                            - surplus_variables[n.name, s, t])
         
-        balance_constraints[n.name, t, s] = c
+        balance_constraints[n.name, s, t] = c
     end
 
     balance_constraints
@@ -95,8 +95,8 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
         if f.source in plain_processes || f.sink in plain_processes
 
             # note: lower bound 0 already constrained in variable creation, redeclared here for readability
-            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, t, s] ≤ f.capacity[s][t])
-            flow_bound_constraints[f.source, f.sink, t, s] = [c]
+            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity[s][t])
+            flow_bound_constraints[f.source, f.sink, s, t] = [c]
 
 
         # Flow from a cf processes
@@ -105,8 +105,8 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
             p = filter(p -> p.name == f.source, structure.cf_processes)[1]
 
             # note: lower bound 0 already constrained in variable creation, redeclared here for readability
-            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, t, s] ≤ f.capacity[s][t] * p.cf[s][t])
-            flow_bound_constraints[f.source, f.sink, t, s] = [c]
+            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity[s][t] * p.cf[s][t])
+            flow_bound_constraints[f.source, f.sink, s, t] = [c]
 
 
         # Flow to or from an online process
@@ -114,12 +114,12 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
             # Find OnlineUnitProcess structure of process in question (notice add_flows would not allow process-process connection so this is safe)
             p = filter(p -> p.name == f.source || p.name == f.sink, structure.online_processes)[1]
 
-            lower_bound = @expression(model, p.min_load * f.capacity[s][t] * online_variables[p.name, t, s])
-            upper_bound = @expression(model, f.capacity[s][t] * online_variables[p.name, t, s])
+            lower_bound = @expression(model, p.min_load * f.capacity[s][t] * online_variables[p.name, s, t])
+            upper_bound = @expression(model, f.capacity[s][t] * online_variables[p.name, s, t])
 
-            c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, t, s])
-            c_ub = @constraint(model, flow_variables[f.source, f.sink, t, s] ≤ upper_bound)
-            flow_bound_constraints[f.source, f.sink, t, s] = [c_lb, c_ub]
+            c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, s, t])
+            c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] ≤ upper_bound)
+            flow_bound_constraints[f.source, f.sink, s, t] = [c_lb, c_ub]
 
         end
     end
@@ -152,9 +152,9 @@ function process_ramp_rate_constraints(model::Model, structure::ModelStructure,
         if f.source in plain_processes || f.sink in plain_processes
             
             c = @constraint(model, -f.ramp_rate * f.capacity[s][t] 
-                            ≤ flow_variables[f.source, f.sink, t, s] - flow_variables[f.source, f.sink, t-1, s] 
+                            ≤ flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1] 
                             ≤ f.ramp_rate * f.capacity[s][t])
-            ramp_rate_constraints[f.source, f.sink, t, s] = [c]
+            ramp_rate_constraints[f.source, f.sink, s, t] = [c]
 
 
         # Flow to or from an online process
@@ -164,14 +164,14 @@ function process_ramp_rate_constraints(model::Model, structure::ModelStructure,
             p = filter(p -> p.name == f.source || p.name == f.sink, structure.online_processes)[1]
 
             lower_bound = @expression(model, - f.ramp_rate * f.capacity[s][t] 
-                                - max(0, p.min_load * f.capacity[s][t] - f.ramp_rate) * stop_variables[p.name, t, s])
+                                - max(0, p.min_load * f.capacity[s][t] - f.ramp_rate) * stop_variables[p.name, s, t])
 
             upper_bound = @expression(model, f.ramp_rate * f.capacity[s][t] 
-                                + max(0, p.min_load * f.capacity[s][t] - f.ramp_rate) * start_variables[p.name, t, s])
+                                + max(0, p.min_load * f.capacity[s][t] - f.ramp_rate) * start_variables[p.name, s, t])
 
-            c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, t, s] - flow_variables[f.source, f.sink, t-1, s])
-            c_ub = @constraint(model, flow_variables[f.source, f.sink, t, s] - flow_variables[f.source, f.sink, t-1, s] ≤ upper_bound)
-            ramp_rate_constraints[f.source, f.sink, t, s] = [c_lb, c_ub]
+            c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1])
+            c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1] ≤ upper_bound)
+            ramp_rate_constraints[f.source, f.sink, s, t] = [c_lb, c_ub]
 
         end # note: cf processes cannot be ramped -> no ramp constraints
     end
@@ -197,10 +197,10 @@ function process_efficiency_constraints(model::Model, structure::ModelStructure,
         input_flows = filter(f -> f.sink == p.name, structure.process_flows)
         input_flows = map(f -> (f.source, f.sink), input_flows)
 
-        c = @constraint(model, sum(flow_variables[i, j, t, s] for (i,j) in output_flows) 
-                            == p.efficiency[s][t] * sum(flow_variables[i, j, t, s] for (i,j) in input_flows))
+        c = @constraint(model, sum(flow_variables[i, j, s, t] for (i,j) in output_flows) 
+                            == p.efficiency[s][t] * sum(flow_variables[i, j, s, t] for (i,j) in input_flows))
 
-        efficiency_constraints[p.name, t, s] = c
+        efficiency_constraints[p.name, s, t] = c
     end
 
     efficiency_constraints
@@ -225,38 +225,38 @@ function online_functionality_constraints(model::Model, structure::ModelStructur
         
         # Set initial status constraint 
         if t == 1 # set initial status
-            c = @constraint(model, online_variables[p.name,t,s] == p.initial_status) 
-            on_off_constraints[p.name,t,s] = c
+            c = @constraint(model, online_variables[p.name, s, t] == p.initial_status) 
+            on_off_constraints[p.name, s, t] = c
         
         # Set on/off functionality constraints for later time steps
         else
-            c = @constraint(model, online_variables[p.name,t,s] 
-                            == online_variables[p.name,t-1,s] + start_variables[p.name,t,s] - stop_variables[p.name,t,s])
+            c = @constraint(model, online_variables[p.name, s, t] 
+                            == online_variables[p.name, s, t-1] + start_variables[p.name, s, t] - stop_variables[p.name, s, t])
             
-            on_off_constraints[p.name,t,s] = c
+            on_off_constraints[p.name, s, t] = c
         end
 
         # Set min online time constraints
         for t2 in t:min(t_max, t+p.min_online)
-            c_min_online = @constraint(model, online_variables[p.name, t2, s] ≥ start_variables[p.name,t,s])
+            c_min_online = @constraint(model, online_variables[p.name, s, t2] ≥ start_variables[p.name, s, t])
 
-            # Insert constraints by first initialising key [p.name, t, s] and then pushing to this vector
+            # Insert constraints by first initialising key [p.name, s, t] and then pushing to this vector
             if t2 == t
-                min_online_constraints[p.name,t,s] = [c_min_online]
+                min_online_constraints[p.name, s, t] = [c_min_online]
             else
-                push!(min_online_constraints[p.name,t,s], c_min_online)
+                push!(min_online_constraints[p.name, s, t], c_min_online)
             end
         end
 
         # Set min offline time constraints
         for t3 in t:min(t_max, t+p.min_offline)
-            c_min_offline = @constraint(model, online_variables[p.name, t3, s] ≤ 1 - stop_variables[p.name,t,s])
+            c_min_offline = @constraint(model, online_variables[p.name, s, t3] ≤ 1 - stop_variables[p.name, s, t])
 
-            # Insert constraints by first initialising key [p.name, t, s] and then pushing to this vector
+            # Insert constraints by first initialising key [p.name, s, t] and then pushing to this vector
             if t3 == t
-                min_offline_constraints[p.name,t,s] = [c_min_offline]
+                min_offline_constraints[p.name, s, t] = [c_min_offline]
             else
-                push!(min_offline_constraints[p.name,t,s], c_min_offline)
+                push!(min_offline_constraints[p.name, s, t], c_min_offline)
             end
         end
 
@@ -281,29 +281,29 @@ function market_bidding_constraints(model::Model, structure::ModelStructure,
         bought = filter(f -> f.source == m.name, structure.market_flows)[1]
 
         # Initialise vector of constraints
-        bidding_constraints[m.name, t, s] = []
+        bidding_constraints[m.name, s, t] = []
 
         for s2 in structure.S 
             if m.price[s][t] ≤ m.price[s2][t] && !(s == s2)
                 
-                c_ineq = @constraint(model, flow_variables[sold.source, sold.sink, t, s] - flow_variables[bought.source, bought.sink, t, s]
-                                    ≤ flow_variables[sold.source, sold.sink, t, s2] - flow_variables[bought.source, bought.sink, t, s2])
+                c_ineq = @constraint(model, flow_variables[sold.source, sold.sink, s, t] - flow_variables[bought.source, bought.sink, s, t]
+                                    ≤ flow_variables[sold.source, sold.sink, s2, t] - flow_variables[bought.source, bought.sink, s2, t])
 
-                push!(bidding_constraints[m.name, t, s], c_ineq)
+                push!(bidding_constraints[m.name, s, t], c_ineq)
             end
 
             if m.price[s][t] == m.price[s2][t] && !(s == s2)
                 
-                c_eq = @constraint(model, flow_variables[sold.source, sold.sink, t, s] - flow_variables[bought.source, bought.sink, t, s]
-                                    == flow_variables[sold.source, sold.sink, t, s2] - flow_variables[bought.source, bought.sink, t, s2])
+                c_eq = @constraint(model, flow_variables[sold.source, sold.sink, s, t] - flow_variables[bought.source, bought.sink, s, t]
+                                    == flow_variables[sold.source, sold.sink, s2, t] - flow_variables[bought.source, bought.sink, s2, t])
 
-                push!(bidding_constraints[m.name, t, s], c_eq)
+                push!(bidding_constraints[m.name, s, t], c_eq)
             end
         end
         
         # If no constraints were generated for this market, scenario and time step, delete the entry
-        if isempty(bidding_constraints[m.name, t, s])
-            delete!(bidding_constraints, (m.name, t, s))
+        if isempty(bidding_constraints[m.name, s, t])
+            delete!(bidding_constraints, (m.name, s, t))
         end
     end
 

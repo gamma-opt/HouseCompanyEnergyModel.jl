@@ -34,11 +34,13 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 obj = declare_objective(model, structure, f, shortage, surplus, 100.0)
 
 @test coefficient(obj, f["n5", "n2", 1, 1]) == 0.1
-@test coefficient(obj, f["n5", "n2", 2, 1]) == 0.2
-@test coefficient(obj, f["n6", "p1", 3, 1]) ≈ 0.3
-@test coefficient(obj, f["n5", "n2", 1, 2]) == 4.5
+@test coefficient(obj, f["n5", "n2", 1, 2]) == 0.2
+@test coefficient(obj, f["n6", "p1", 1, 3]) ≈ 0.3
+@test coefficient(obj, f["n5", "n2", 2, 1]) == 4.5
 @test coefficient(obj, f["n6", "p1", 2, 2]) == 5.4
-@test coefficient(obj, f["n5", "n2", 3, 2]) == 0.9
+@test coefficient(obj, f["n5", "n2", 2, 3]) == 0.9
+
+
 
 
 @info "Market costs"
@@ -60,18 +62,20 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 obj = declare_objective(model, structure, f, shortage, surplus, 100.0)
 
 @test coefficient(obj, f["n7", "n1", 1, 1]) == 0.4
-@test coefficient(obj, f["n7", "n1", 2, 1]) == 0.4
-@test coefficient(obj, f["n8", "n3", 3, 1]) ≈ 0.3
-@test coefficient(obj, f["n8", "n3", 1, 2]) == 5.4
+@test coefficient(obj, f["n7", "n1", 1, 2]) == 0.4
+@test coefficient(obj, f["n8", "n3", 1, 3]) ≈ 0.3
+@test coefficient(obj, f["n8", "n3", 2, 1]) == 5.4
 @test coefficient(obj, f["n7", "n1", 2, 2]) == 3.6
-@test coefficient(obj, f["n8", "n3", 3, 2]) == 1.8
+@test coefficient(obj, f["n8", "n3", 2, 3]) == 1.8
 
 @test coefficient(obj, f["n1", "n7", 1, 1]) == 0.4
-@test coefficient(obj, f["n1", "n7", 2, 1]) == 0.4
-@test coefficient(obj, f["n3", "n8", 3, 1]) ≈ 0.3
-@test coefficient(obj, f["n3", "n8", 1, 2]) == 5.4
+@test coefficient(obj, f["n1", "n7", 1, 2]) == 0.4
+@test coefficient(obj, f["n3", "n8", 1, 3]) ≈ 0.3
+@test coefficient(obj, f["n3", "n8", 2, 1]) == 5.4
 @test coefficient(obj, f["n1", "n7", 2, 2]) == 3.6
-@test coefficient(obj, f["n3", "n8", 3, 2]) == 1.8
+@test coefficient(obj, f["n3", "n8", 2, 3]) == 1.8
+
+
 
 
 @info "VOM costs"
@@ -91,48 +95,52 @@ start, stop, online = start_stop_online_variables(model, structure)
 obj = declare_objective(model, structure, f, shortage, surplus, 100.0, start)
 
 @test coefficient(obj, f["p3", "n2", 1, 1]) == 1.0
-@test coefficient(obj, f["p3", "n2", 2, 1]) == 1.0
-@test coefficient(obj, f["p3", "n2", 3, 1]) == 1.0
-@test coefficient(obj, f["p3", "n2", 1, 2]) == 9
+@test coefficient(obj, f["p3", "n2", 1, 2]) == 1.0
+@test coefficient(obj, f["p3", "n2", 1, 3]) == 1.0
+@test coefficient(obj, f["p3", "n2", 2, 1]) == 9
 @test coefficient(obj, f["p3", "n2", 2, 2]) == 9
-@test coefficient(obj, f["p3", "n2", 3, 2]) == 9
+@test coefficient(obj, f["p3", "n2", 2, 3]) == 9
 
 # these flows also have commodity costs + VOM costs because n5 is a commodity node
 @test coefficient(obj, f["n5", "p5", 1, 1]) == 0.1 + 0.2
-@test coefficient(obj, f["n5", "p5", 2, 1]) == 0.2 + 0.2
-@test coefficient(obj, f["n5", "p5", 3, 1]) == 0.3 + 0.2
-@test coefficient(obj, f["n5", "p5", 1, 2]) == 4.5 + 1.8
+@test coefficient(obj, f["n5", "p5", 1, 2]) == 0.2 + 0.2
+@test coefficient(obj, f["n5", "p5", 1, 3]) == 0.3 + 0.2
+@test coefficient(obj, f["n5", "p5", 2, 1]) == 4.5 + 1.8
 @test coefficient(obj, f["n5", "p5", 2, 2]) == 5.4 + 1.8
-@test coefficient(obj, f["n5", "p5", 3, 2]) == 0.9 + 1.8
+@test coefficient(obj, f["n5", "p5", 2, 3]) == 0.9 + 1.8
+
+
 
 @info "Start costs"
 @test coefficient(obj, start["p5", 1, 1]) == 0.8
-@test coefficient(obj, start["p5", 2, 1]) == 0.8
-@test coefficient(obj, start["p5", 3, 1]) == 0.8
-@test coefficient(obj, start["p5", 1, 2]) == 7.2
+@test coefficient(obj, start["p5", 1, 2]) == 0.8
+@test coefficient(obj, start["p5", 1, 3]) == 0.8
+@test coefficient(obj, start["p5", 2, 1]) == 7.2
 @test coefficient(obj, start["p5", 2, 2]) == 7.2
-@test coefficient(obj, start["p5", 3, 2]) == 7.2
+@test coefficient(obj, start["p5", 2, 3]) == 7.2
+
+
 
 @info "Penalty costs"
 # plain nodes
 @test coefficient(obj, shortage["n1", 1, 1]) == 10
-@test coefficient(obj, shortage["n1", 2, 1]) == 10
-@test coefficient(obj, surplus["n1", 3, 1]) == 10
-@test coefficient(obj, surplus["n1", 1, 2]) == 90
+@test coefficient(obj, shortage["n1", 1, 2]) == 10
+@test coefficient(obj, surplus["n1", 1, 3]) == 10
+@test coefficient(obj, surplus["n1", 2, 1]) == 90
 @test coefficient(obj, surplus["n1", 2, 2]) == 90
-@test coefficient(obj, shortage["n1", 3, 2]) == 90
+@test coefficient(obj, shortage["n1", 2, 3]) == 90
 
 @test coefficient(obj, shortage["n2", 1, 1]) == 10
-@test coefficient(obj, shortage["n2", 2, 1]) == 10
-@test coefficient(obj, surplus["n2", 3, 1]) == 10
-@test coefficient(obj, surplus["n2", 1, 2]) == 90
+@test coefficient(obj, shortage["n2", 1, 2]) == 10
+@test coefficient(obj, surplus["n2", 1, 3]) == 10
+@test coefficient(obj, surplus["n2", 2, 1]) == 90
 @test coefficient(obj, surplus["n2", 2, 2]) == 90
-@test coefficient(obj, shortage["n2", 3, 2]) == 90
+@test coefficient(obj, shortage["n2", 2, 3]) == 90
 
 # commodity node
 @test coefficient(obj, shortage["n3", 1, 1]) == 10
-@test coefficient(obj, shortage["n3", 2, 1]) == 10
-@test coefficient(obj, surplus["n3", 3, 1]) == 10
-@test coefficient(obj, surplus["n3", 1, 2]) == 90
+@test coefficient(obj, shortage["n3", 1, 2]) == 10
+@test coefficient(obj, surplus["n3", 1, 3]) == 10
+@test coefficient(obj, surplus["n3", 2, 1]) == 90
 @test coefficient(obj, surplus["n3", 2, 2]) == 90
-@test coefficient(obj, shortage["n3", 3, 2]) == 90
+@test coefficient(obj, shortage["n3", 2, 3]) == 90
