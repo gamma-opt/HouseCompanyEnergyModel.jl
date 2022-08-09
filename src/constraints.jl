@@ -279,7 +279,8 @@ function market_bidding_constraints(model::Model, structure::ModelStructure,
     flow_variables::Dict{FlowTuple, VariableRef})
 
     # Dictionary for constraints, to be returned from function
-    bidding_constraints = Dict{NodeTuple, Vector{ConstraintRef}}()
+    # the index is (market node, scenario1, scenario2, time step)
+    bidding_constraints = Dict{Tuple{Name, Int, Int, Int}, ConstraintRef}()
 
     # Generate constraints for each market node, in each scenario and time step
     for m in structure.market_nodes, s in structure.S, t in structure.T
@@ -289,31 +290,24 @@ function market_bidding_constraints(model::Model, structure::ModelStructure,
         sold = filter(f -> f.sink == m.name, structure.market_flows)[1]
         bought = filter(f -> f.source == m.name, structure.market_flows)[1]
 
-        # Initialise vector of constraints
-        bidding_constraints[m.name, s, t] = []
-
         for s2 in structure.S 
-            if m.price[s][t] ≤ m.price[s2][t] && !(s == s2)
+            if m.price[s][t] < m.price[s2][t] && !(s == s2)
                 
                 c_ineq = @constraint(model, flow_variables[sold.source, sold.sink, s, t] - flow_variables[bought.source, bought.sink, s, t]
                                     ≤ flow_variables[sold.source, sold.sink, s2, t] - flow_variables[bought.source, bought.sink, s2, t])
 
-                push!(bidding_constraints[m.name, s, t], c_ineq)
+                bidding_constraints[m.name, s, s2, t] = c_ineq
             end
 
-            if m.price[s][t] == m.price[s2][t] && !(s == s2)
+            if m.price[s][t] == m.price[s2][t] && s < s2
                 
                 c_eq = @constraint(model, flow_variables[sold.source, sold.sink, s, t] - flow_variables[bought.source, bought.sink, s, t]
                                     == flow_variables[sold.source, sold.sink, s2, t] - flow_variables[bought.source, bought.sink, s2, t])
 
-                push!(bidding_constraints[m.name, s, t], c_eq)
+                bidding_constraints[m.name, s, s2, t] = c_eq
             end
         end
         
-        # If no constraints were generated for this market, scenario and time step, delete the entry
-        if isempty(bidding_constraints[m.name, s, t])
-            delete!(bidding_constraints, (m.name, s, t))
-        end
     end
 
     bidding_constraints
