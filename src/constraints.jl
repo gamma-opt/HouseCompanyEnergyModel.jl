@@ -104,7 +104,7 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
         if f.source in plain_processes || f.sink in plain_processes
 
             # note: lower bound 0 already constrained in variable creation, redeclared here for readability
-            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity[s][t])
+            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity)
             flow_bound_constraints[f.source, f.sink, s, t] = [c]
 
 
@@ -114,7 +114,7 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
             p = filter(p -> p.name == f.source, structure.cf_processes)[1]
 
             # note: lower bound 0 already constrained in variable creation, redeclared here for readability
-            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity[s][t] * p.cf[s][t])
+            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity * p.cf[s][t])
             flow_bound_constraints[f.source, f.sink, s, t] = [c]
 
 
@@ -123,8 +123,8 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
             # Find OnlineUnitProcess structure of process in question (notice add_flows would not allow process-process connection so this is safe)
             p = filter(p -> p.name == f.source || p.name == f.sink, structure.online_processes)[1]
 
-            lower_bound = @expression(model, p.min_load * f.capacity[s][t] * online_variables[p.name, s, t])
-            upper_bound = @expression(model, f.capacity[s][t] * online_variables[p.name, s, t])
+            lower_bound = @expression(model, p.min_load * f.capacity * online_variables[p.name, s, t])
+            upper_bound = @expression(model, f.capacity * online_variables[p.name, s, t])
 
             c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, s, t])
             c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] ≤ upper_bound)
@@ -160,9 +160,9 @@ function process_ramp_rate_constraints(model::Model, structure::ModelStructure,
         # Flow to or from a plain process
         if f.source in plain_processes || f.sink in plain_processes
             
-            c = @constraint(model, -f.ramp_rate * f.capacity[s][t] 
+            c = @constraint(model, -f.ramp_rate * f.capacity 
                             ≤ flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1] 
-                            ≤ f.ramp_rate * f.capacity[s][t])
+                            ≤ f.ramp_rate * f.capacity)
             ramp_rate_constraints[f.source, f.sink, s, t] = [c]
 
 
@@ -172,11 +172,11 @@ function process_ramp_rate_constraints(model::Model, structure::ModelStructure,
             # Find OnlineUnitProcess structure of process in question (notice add_flows would not allow process-process connection so this is safe)
             p = filter(p -> p.name == f.source || p.name == f.sink, structure.online_processes)[1]
 
-            lower_bound = @expression(model, - f.ramp_rate * f.capacity[s][t] 
-                                - max(0, p.min_load * f.capacity[s][t] - f.ramp_rate) * stop_variables[p.name, s, t])
+            lower_bound = @expression(model, - f.ramp_rate * f.capacity
+                                - max(0, p.min_load * f.capacity - f.ramp_rate) * stop_variables[p.name, s, t])
 
-            upper_bound = @expression(model, f.ramp_rate * f.capacity[s][t] 
-                                + max(0, p.min_load * f.capacity[s][t] - f.ramp_rate) * start_variables[p.name, s, t])
+            upper_bound = @expression(model, f.ramp_rate * f.capacity
+                                + max(0, p.min_load * f.capacity - f.ramp_rate) * start_variables[p.name, s, t])
 
             c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1])
             c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1] ≤ upper_bound)

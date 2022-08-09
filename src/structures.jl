@@ -192,7 +192,7 @@ abstract type AbstractFlow end
     struct ProcessFlow <: AbstractFlow
         source::Name
         sink::Name
-        capacity::TimeSeries
+        capacity::Float64
         VOM_cost::Float64
         ramp_rate::Float64
     end
@@ -202,25 +202,27 @@ A struct for modeling flow connecting node-node or process-node pairs.
 # Fields
 - `source::Name`: Name of the source of the topology.
 - `sink::Name`: Name of the sink of the topology.
-- `capacity::TimeSeries`: Upper limit of the flow variable. 
+- `capacity::Float64`: Upper limit of the flow variable. 
 - `VOM_cost::Float64`: VOM cost of using this connection. 
 - `ramp_rate::Float64`: Maximum allowed change of the linked flow variable value between timesteps. Min 0.0 max 1.0. 
 """
 struct ProcessFlow <: AbstractFlow
     source::Name
     sink::Name
-    capacity::TimeSeries
+    capacity::Float64
     VOM_cost::Float64
     ramp_rate::Float64
 end
 
 function process_flow(source::Name, sink::Name, 
-    capacity::TimeSeries, S::Scenarios, T::TimeSteps, 
-    VOM_cost::Float64, ramp_rate::Float64)
+    capacity::Float64,
+    VOM_cost::Float64, 
+    ramp_rate::Float64)
 
-    validate_time_series(capacity, S, T)
     if source == sink
         throw(DomainError("The source and sink of a flow cannot be the same."))
+    elseif capacity < 0
+        throw(DomainError("The capacity of a flow must be nonnegative."))
     elseif !(0 <= ramp_rate <= 1)
         throw(DomainError("Ramp rate value must be between 0 and 1."))
     end
