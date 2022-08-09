@@ -1,5 +1,5 @@
 using JuMP
-
+using MathOptInterface
 
 S = scenarios(2)
 T = time_steps(3)
@@ -19,7 +19,7 @@ n7 = market_node("n7", price, S, T)
 
 p1 = plain_unit_process("p1", efficiency, S, T)
 p3 = cf_unit_process("p3", cf, S, T)
-p5 = online_unit_process("p5", efficiency, S, T, 0.1, 1, 1, 8.0, 0)
+p5 = online_unit_process("p5", efficiency, S, T, 0.1, 1, 1, 8.0, 1)
 
 f_a = process_flow("n5", "p5", 30.0, 2.0, 0.1)
 f_b = process_flow("n5", "p1", 30.0, 2.0, 0.2)
@@ -182,3 +182,61 @@ c6 = process_efficiency_constraints(model, structure, f)
 @test all(normalized_coefficient(c6["p5", sce, t], f["p5", "n1", sce, t]) == 1 for sce in S, t in T)
 @test all(normalized_coefficient(c6["p5", sce, t], f["n5", "p5", sce, t]) == -efficiency[sce][t] for sce in S, t in T)
 @test all(normalized_rhs(c6["p5", sce, t]) == 0.0 for sce in S, t in T)
+
+
+
+@info "Online functionality constraints"
+c7, c8, c9 = online_functionality_constraints(model, structure, start, stop, online)
+
+# Check constraint generated for each online process (1), scenario (2) and time step (3)
+@test length(c7) == 1 * 2 * 3
+@test length(c8) == 1 * 2 * 3
+@test length(c9) == 1 * 2 * 3
+
+# Check on/off constraint initial status
+@test all(normalized_coefficient(c7["p5", sce, 1], online["p5", sce, 1]) == p5.initial_status for sce in S)
+
+# Check on/off constraint rest of time steps
+@test all(normalized_coefficient(c7["p5", sce, t], online["p5", sce, t]) == 1 for sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c7["p5", sce, t], online["p5", sce, t-1]) == -1 for sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c7["p5", sce, t], start["p5", sce, t]) == -1 for sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c7["p5", sce, t], stop["p5", sce, t]) == 1 for sce in S, t in 2:length(T))
+
+# Check min online constraint (min online time of p5 is 1, thus checking t and t+1 online variables)
+@test all(normalized_coefficient(c8["p5", sce, t][1], online["p5", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_coefficient(c8["p5", sce, t][2], online["p5", sce, t+1]) == 1 for sce in S, t in 1:2)
+@test all(normalized_coefficient(c8["p5", sce, t][1], start["p5", sce, t]) == -1 for sce in S, t in T)
+@test all(normalized_coefficient(c8["p5", sce, t][2], start["p5", sce, t]) == -1 for sce in S, t in 1:2)
+
+# Check min offline constraint (min online time of p5 is 1, thus checking t and t+1 online variables)
+@test all(normalized_coefficient(c9["p5", sce, t][1], online["p5", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_coefficient(c9["p5", sce, t][2], online["p5", sce, t+1]) == 1 for sce in S, t in 1:2)
+@test all(normalized_coefficient(c9["p5", sce, t][1], stop["p5", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_coefficient(c9["p5", sce, t][2], stop["p5", sce, t]) == 1 for sce in S, t in 1:2)
+@test all(normalized_rhs(c9["p5", sce, t][1]) == 1 for sce in S, t in T)
+@test all(normalized_rhs(c9["p5", sce, t][2]) == 1 for sce in S, t in 1:2)
+
+
+
+@info "Market bidding constraints"
+c10 = market_bidding_constraints(model, structure, f)
+
+# Check constraint generated for each market (1), scenario comparisons (1) and time step (3)
+@test length(c10) == 1 * 1 * 3
+
+# Test that inequality constraint exists for scenario 1, scenario 2, time step 1 (since it has a lower price than s2,t1)
+@test normalized_coefficient(c10["n7", 1, 2, 1], f["n1", "n7", 1, 1]) == 1
+@test normalized_coefficient(c10["n7", 1, 2, 1], f["n7", "n1", 1, 1]) == -1
+@test normalized_coefficient(c10["n7", 1, 2, 1], f["n1", "n7", 2, 1]) == -1
+@test normalized_coefficient(c10["n7", 1, 2, 1], f["n7", "n1", 2, 1]) == 1
+# Checking that this is inequality constraint
+@test isa(c10["n7", 1, 2, 1], ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.LessThan{Float64}}, ScalarShape})
+
+# Test that equality constraint exists for scenario 1,scenario 2, time step 2 (since it has a equal price to s2,t2)
+@test normalized_coefficient(c10["n7", 1, 2, 2], f["n1", "n7", 1, 2]) == 1
+@test normalized_coefficient(c10["n7", 1, 2, 2], f["n7", "n1", 1, 2]) == -1
+@test normalized_coefficient(c10["n7", 1, 2, 2], f["n1", "n7", 2, 2]) == -1
+@test normalized_coefficient(c10["n7", 1, 2, 2], f["n7", "n1", 2, 2]) == 1
+# Checking that this is equality constraint
+@test isa(c10["n7", 1, 2,2], ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.EqualTo{Float64}}, ScalarShape})
+
