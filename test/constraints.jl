@@ -167,3 +167,18 @@ c5 = process_ramp_rate_constraints(model, structure, f, start, stop)
 @test all(normalized_coefficient(c5["p5", "n1", sce, t][2], start["p5", sce, t]) == -(0.1*5.0 - 0.2) for sce in S, t in 2:length(T))
 
 
+@info "Efficiency constraints"
+c6 = process_efficiency_constraints(model, structure, f)
+
+# Check constraint generated for each plain and online process (2), scenario (2) and time step (3)
+@test length(c6) == 2 * 2 * 3
+
+# Efficiency of process p1
+@test all(normalized_coefficient(c6["p1", sce, t], f["p1", "n3", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_coefficient(c6["p1", sce, t], f["n5", "p1", sce, t]) == -efficiency[sce][t] for sce in S, t in T)
+@test all(normalized_rhs(c6["p1", sce, t]) == 0.0 for sce in S, t in T)
+
+# Efficiency of process p5
+@test all(normalized_coefficient(c6["p5", sce, t], f["p5", "n1", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_coefficient(c6["p5", sce, t], f["n5", "p5", sce, t]) == -efficiency[sce][t] for sce in S, t in T)
+@test all(normalized_rhs(c6["p5", sce, t]) == 0.0 for sce in S, t in T)
