@@ -45,7 +45,7 @@ validate_network(structure)
 
 model = Model()
 
-@info "\nVariable generation:"
+@info "\n\tVariable generation:"
 
 
 @info "Testing flow variables"

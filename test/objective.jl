@@ -12,7 +12,7 @@ cf = [[0.5, 0.5, 0.5], [0.1, 0.1, 0.1]]
 structure = ModelStructure(S, T, [0.1, 0.9])
 
 
-@info "\nObjective function:"
+@info "\n\tObjective function:"
 
 @info "Commodity costs"
 n5 = commodity_node("n5", time_series, S, T)

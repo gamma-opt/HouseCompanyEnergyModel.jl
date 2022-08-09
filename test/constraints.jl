@@ -43,7 +43,7 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 start, stop, online = start_stop_online_variables(model, structure)
 
 
-@info "\nConstraints:"
+@info "\n\tConstraints:"
 
 @info "Charging and discharging constraint"
 c1,c2 = charging_discharging_constraints(model, structure, s)
