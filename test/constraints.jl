@@ -4,6 +4,7 @@ using JuMP
 S = scenarios(2)
 T = time_steps(3)
 time_series = [[1,2,3], [5.0, 6, 1]]
+demand = [[-1,-2,-3], [-5.0, -6, -1]]
 price = [[4.0, 4, 3], [6, 4, 2]]
 efficiency = [[0.1, 0.1, 0.1], [0.2, 0.2, 0.2]]
 cf = [[0.5, 0.5, 0.5], [0.1, 0.1, 0.1]]
@@ -11,8 +12,8 @@ cf = [[0.5, 0.5, 0.5], [0.1, 0.1, 0.1]]
 # Declare test structure
 structure = ModelStructure(S, T, [0.1, 0.9])
 
-n2 = plain_node("n2", time_series, S, T)
-n3 = storage_node("n3", 2.0, 6.0, 20.0, 0.5, time_series, S, T, 10)
+n1 = plain_node("n1", time_series, S, T)
+n3 = storage_node("n3", 2.0, 6.0, 20.0, 0.5, demand, S, T, 10) #storage node has demand
 n5 = commodity_node("n5", time_series, S, T)
 n7 = market_node("n7", price, S, T)
 
@@ -47,7 +48,7 @@ start, stop, online = start_stop_online_variables(model, structure)
 @info "Charging and discharging constraint"
 c1,c2 = charging_discharging_constraints(model, structure, s)
 
-# Check constraint generated for each node (1), scenario (2) and time step (3)
+# Check constraint generated for each storage node (1), scenario (2) and time step (3)
 @test length(c1) == 1 * 2 * 3
 @test length(c1) == length(c2)
 
@@ -74,4 +75,60 @@ RHS = 6.0
 
 
 
-@info "Charging and discharging constraint"
+@info "State balance constraints"
+c3 = state_balance_constraints(model, structure, f, shortage, surplus, s)
+
+# Check constraint generated for each storage and plain node (2), scenario (2) and time step (3)
+@test length(c3) == 2 * 2 * 3
+
+# Check variable coefficients in constraints
+# storage node state variables
+@test all(normalized_coefficient(c3["n3", sce, t], s["n3", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_coefficient(c3["n3", sce, t], s["n3", sce, t-1]) == -0.5 for sce in S, t in 2:length(T))
+
+# flow variables
+@test all(normalized_coefficient(c3["n3", sce, t], f[source, "n3", sce, t]) == -1 for sce in S, t in T, source in ["n1", "p1"])
+@test all(normalized_coefficient(c3["n1", sce, t], f[source, "n1", sce, t]) == -1 for sce in S, t in T, source in ["p3", "p5", "n7"])
+@test all(normalized_coefficient(c3["n1", sce, t], f["n1", sink, sce, t]) == 1 for sce in S, t in T, sink in ["n3", "n7"])
+
+# shortage and surplus variables
+@test all(normalized_coefficient(c3[n, sce, t], shortage[n, sce, t]) == -1 for n in ["n1", "n3"], sce in S, t in T)
+@test all(normalized_coefficient(c3[n, sce, t], surplus[n, sce, t]) == 1 for n in ["n1", "n3"], sce in S, t in T)
+
+# constant (comes from external flow and for n3 also initial state)
+# RHS = external_flow(t=1) + (1 - n.state_loss) * n.initial_state
+RHS = [-1 + 0.5 *10, -5.0 + 0.5 *10]
+@test all(normalized_rhs(c3["n3", sce, 1]) == RHS[sce] for sce in S)
+# RHS = external_flow
+@test all(normalized_rhs(c3["n3", sce, t]) == demand[sce][t] for sce in S, t in 2:length(T))
+@test all(normalized_rhs(c3["n1", sce, t]) == time_series[sce][t] for sce in S, t in T)
+
+
+
+@info "Process flow constraints"
+c4 = process_flow_bound_constraints(model, structure, f, online)
+
+# Check constraint generated for each process flow (5), scenario (2) and time step (3)
+@test length(c4) == 5 * 2 * 3
+
+# process flows of plain processes
+@test string(c4["p1", "n3", 1, 1]) == "ConstraintRef[f(p1, n3, s1, t1) ∈ [0.0, 1.0]]"
+@test string(c4["p1", "n3", 2, 2]) == "ConstraintRef[f(p1, n3, s2, t2) ∈ [0.0, 6.0]]"
+@test string(c4["n5", "p1", 1, 3]) == "ConstraintRef[f(n5, p1, s1, t3) ∈ [0.0, 3.0]]"
+@test string(c4["n5", "p1", 2, 3]) == "ConstraintRef[f(n5, p1, s2, t3) ∈ [0.0, 1.0]]"
+
+# process flows of cf process
+@test string(c4["p3", "n1", 1, 1]) == "ConstraintRef[f(p3, n1, s1, t1) ∈ [0.0, 0.5]]"
+@test string(c4["p3", "n1", 1, 2]) == "ConstraintRef[f(p3, n1, s1, t2) ∈ [0.0, 1.0]]"
+@test string(c4["p3", "n1", 1, 3]) == "ConstraintRef[f(p3, n1, s1, t3) ∈ [0.0, 1.5]]"
+@test string(c4["p3", "n1", 2, 1]) == "ConstraintRef[f(p3, n1, s2, t1) ∈ [0.0, 0.5]]"
+@test string(c4["p3", "n1", 2, 3]) == "ConstraintRef[f(p3, n1, s2, t3) ∈ [0.0, 0.1]]"
+
+# flow variables of process flows of online process ([1] = lower bound, [2] = upper bound )
+@test all(normalized_coefficient(c4[source, sink, sce, t][1], f[source, sink, sce, t]) == -1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in T)
+@test all(normalized_coefficient(c4[source, sink, sce, t][2], f[source, sink, sce, t]) == 1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in T)
+
+
+# online variables of process flows of online process
+@test all(normalized_coefficient(c4[source, sink, sce, t][1], online["p5", sce, t]) == 0.1 * time_series[sce][t] for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in T)
+@test all(normalized_coefficient(c4[source, sink, sce, t][2], online["p5", sce, t]) == - time_series[sce][t] for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in T)
