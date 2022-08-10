@@ -85,6 +85,6 @@ function declare_objective(model::Model, structure::ModelStructure,
 
 
 
-    @objective(model, Min, commodity_costs + market_costs + market_profits + vom_costs + start_costs + penalty_cost)
+    @objective(model, Min, commodity_costs + market_costs - market_profits + vom_costs + start_costs + penalty_cost)
 
 end

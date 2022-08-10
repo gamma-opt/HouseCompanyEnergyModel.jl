@@ -68,12 +68,13 @@ obj = declare_objective(model, structure, f, shortage, surplus, 100.0)
 @test coefficient(obj, f["n7", "n1", 2, 2]) == 3.6
 @test coefficient(obj, f["n8", "n3", 2, 3]) == 1.8
 
-@test coefficient(obj, f["n1", "n7", 1, 1]) == 0.4
-@test coefficient(obj, f["n1", "n7", 1, 2]) == 0.4
-@test coefficient(obj, f["n3", "n8", 1, 3]) ≈ 0.3
-@test coefficient(obj, f["n3", "n8", 2, 1]) == 5.4
-@test coefficient(obj, f["n1", "n7", 2, 2]) == 3.6
-@test coefficient(obj, f["n3", "n8", 2, 3]) == 1.8
+@info "Market profits"
+@test coefficient(obj, f["n1", "n7", 1, 1]) == -0.4
+@test coefficient(obj, f["n1", "n7", 1, 2]) == -0.4
+@test coefficient(obj, f["n3", "n8", 1, 3]) ≈ -0.3
+@test coefficient(obj, f["n3", "n8", 2, 1]) == -5.4
+@test coefficient(obj, f["n1", "n7", 2, 2]) == -3.6
+@test coefficient(obj, f["n3", "n8", 2, 3]) == -1.8
 
 
 
