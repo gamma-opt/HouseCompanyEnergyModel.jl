@@ -41,10 +41,16 @@ end
     const TimeSeries = Vector{Vector{Float64}}
 
 Type for storing a vector containing time series values for each scenario. 
-If B is of type TimeSeries, then B[s][t] should give to value at time t in scenario s.
+If B is of type TimeSeries, then B[s][t] should give value at time t in scenario s.
 """
 const TimeSeries = Vector{Vector{Float64}}
 
+
+"""
+    function validate_time_series(timeseries::Vector{Vector{Float64}}, S::Scenarios, T::TimeSteps)
+
+Function for validating structure of time series is compatible with scenarios S and time steps T.
+"""
 function validate_time_series(timeseries::Vector{Vector{Float64}}, S::Scenarios, T::TimeSteps)
     if length(S) != length(timeseries)
         throw(DomainError("There must be a time series for each scenario."))
@@ -57,10 +63,15 @@ end
 
 # --- Nodes ---
 
+"""
+    abstract type AbstractNode end
+
+Abstract type for nodes.
+"""
 abstract type AbstractNode end
 
 """
-const Name = String
+    const Name = String
 
 Type alias for String to ease reading of names.
 """
