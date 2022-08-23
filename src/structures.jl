@@ -77,14 +77,14 @@ Type alias for String to ease reading of names.
 """
 const Name = String
 
-struct PlainNode <: AbstractNode
+struct EnergyNode <: AbstractNode
     name::Name
     external_flow::TimeSeries
 end
 
-function plain_node(name::Name, external_flow::TimeSeries, S::Scenarios, T::TimeSteps)
+function energy_node(name::Name, external_flow::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(external_flow, S, T)
-    PlainNode(name, external_flow)
+    EnergyNode(name, external_flow)
 end
 
 struct StorageNode <: AbstractNode
@@ -295,7 +295,7 @@ end
     mutable struct ModelStructure
         S::Scenarios
         T::TimeSteps
-        plain_nodes::Vector{PlainNode}
+        energy_nodes::Vector{EnergyNode}
         storage_nodes::Vector{StorageNode}
         commodity_nodes::Vector{CommodityNode}
         market_nodes::Vector{MarketNode}
@@ -317,7 +317,7 @@ mutable struct ModelStructure
     S::Scenarios
     T::TimeSteps
     scenario_probabilities::Vector{Float64}
-    plain_nodes::Vector{PlainNode}
+    energy_nodes::Vector{EnergyNode}
     storage_nodes::Vector{StorageNode}
     commodity_nodes::Vector{CommodityNode}
     market_nodes::Vector{MarketNode}
@@ -347,7 +347,7 @@ function get_names(structure::ModelStructure; nodes::Bool=false, processes::Bool
     all_names = []
 
     if nodes
-        push!(all_names, map(n -> n.name, structure.plain_nodes)...)
+        push!(all_names, map(n -> n.name, structure.energy_nodes)...)
         push!(all_names, map(n -> n.name, structure.storage_nodes)...)
         push!(all_names, map(n -> n.name, structure.commodity_nodes)...)
         push!(all_names, map(n -> n.name, structure.market_nodes)...)
@@ -397,8 +397,8 @@ function add_nodes!(structure::ModelStructure, nodes::Vector{N}) where N<:Abstra
             throw(DomainError("Name $(n.name) is not unique. Name must be unique."))
         end
 
-        if isa(n, PlainNode)
-            push!(structure.plain_nodes, n)
+        if isa(n, EnergyNode)
+            push!(structure.energy_nodes, n)
 
         elseif isa(n, StorageNode)
             push!(structure.storage_nodes, n)

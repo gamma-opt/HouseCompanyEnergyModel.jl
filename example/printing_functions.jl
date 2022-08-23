@@ -147,7 +147,7 @@ function objective_per_scenario(structure::ModelStructure,
     end
 
     # -- Penalty costs --
-    balance_nodes = [structure.plain_nodes..., structure.storage_nodes...]
+    balance_nodes = [structure.energy_nodes..., structure.storage_nodes...]
     for s in S
         costs[s] += sum(penalty * (value(shortage_variables[n.name, s, t]) + value(surplus_variables[n.name, s, t])) for n in balance_nodes, t in T)
     end

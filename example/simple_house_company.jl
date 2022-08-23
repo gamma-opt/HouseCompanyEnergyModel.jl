@@ -14,7 +14,7 @@ PV_cf = [[1.0, 0.90, 0.90, 1.0],[0.4, 0.8, 0.5, 0.6]]
 PV = vre_process("PV", PV_cf, S, T)
 
 ELC_demand = -1.0*[[19, 19, 18, 17],[23, 24, 22, 22]]
-ELC = plain_node("ELC", ELC_demand, S, T)
+ELC = energy_node("ELC", ELC_demand, S, T)
 
 NPE_price = 1.0*[[13, 13, 13, 13],[13, 13, 14, 14]] 
 NPE = market_node("NPE", NPE_price, S, T)

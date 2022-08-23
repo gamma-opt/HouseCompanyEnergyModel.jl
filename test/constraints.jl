@@ -12,7 +12,7 @@ cf = [[0.5, 0.5, 0.5], [0.1, 0.1, 0.1]]
 # Declare test structure
 structure = ModelStructure(S, T, [0.1, 0.9])
 
-n1 = plain_node("n1", time_series, S, T)
+n1 = energy_node("n1", time_series, S, T)
 n3 = storage_node("n3", 2.0, 6.0, 20.0, 0.5, demand, S, T, 10) #storage node has demand
 n5 = commodity_node("n5", time_series, S, T)
 n7 = market_node("n7", price, S, T)
@@ -78,7 +78,7 @@ RHS = 6.0
 @info "State balance constraints"
 c3 = state_balance_constraints(model, structure, f, shortage, surplus, s)
 
-# Check constraint generated for each storage and plain node (2), scenario (2) and time step (3)
+# Check constraint generated for each storage and energy node (2), scenario (2) and time step (3)
 @test length(c3) == 2 * 2 * 3
 
 # Check variable coefficients in constraints

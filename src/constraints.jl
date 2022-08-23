@@ -42,13 +42,13 @@ function state_balance_constraints(model::Model, structure::ModelStructure,
     # Get all flows from structure into one variable for ease of use
     flows = get_flows(structure)
 
-    # Plain nodes and storage nodes are the only ones were balance is maintained (not in commodity or market nodes)
-    balance_nodes = [structure.plain_nodes..., structure.storage_nodes...]
+    # Energy nodes and storage nodes are the only ones were balance is maintained (not in commodity or market nodes)
+    balance_nodes = [structure.energy_nodes..., structure.storage_nodes...]
 
     # Dictionary of constraints, to be returned from function 
     balance_constraints = Dict{NodeTuple, ConstraintRef}()
 
-    # Generate balance equation for storage nodes. Note: plain nodes don't have storage, thus LHS=0
+    # Generate balance equation for storage nodes. Note: energy nodes don't have storage, thus LHS=0
     for n in balance_nodes, s in structure.S, t in structure.T
 
         output_flows = filter(f -> f.source == n.name, flows)
@@ -58,8 +58,8 @@ function state_balance_constraints(model::Model, structure::ModelStructure,
         input_flows = map(f -> (f.source, f.sink), input_flows)
 
         # Declare left hand side of constraint
-        if isa(n, PlainNode)
-            # Plain nodes don't have storage, thus LHS=0
+        if isa(n, EnergyNode)
+            # Energy nodes don't have storage, thus LHS=0
             LHS = @expression(model, 0.0)
         else
             # for storage node if t ==1 then state(n, s, t-1) = initial state

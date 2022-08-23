@@ -21,11 +21,11 @@ time_series = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 @info "Testing nodes"
 not_time_series = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5]]
 
-# Plain node 1
-@test isa(plain_node("n1", time_series, S, T), AbstractNode)
-@test isa(plain_node("n1", time_series, S, T), PlainNode)
-@test isa(PlainNode("n1", not_time_series), PlainNode)
-@test_throws DomainError plain_node("n1", not_time_series, S , T)
+# Energy node 1
+@test isa(energy_node("n1", time_series, S, T), AbstractNode)
+@test isa(energy_node("n1", time_series, S, T), EnergyNode)
+@test isa(EnergyNode("n1", not_time_series), EnergyNode)
+@test_throws DomainError energy_node("n1", not_time_series, S , T)
 
 # Storage node 2
 @test isa(StorageNode("n2", 1.0, 1.0, 1.0, 0.1, not_time_series, 0.3), StorageNode)
@@ -118,8 +118,8 @@ structure = ModelStructure(scenarios(3), time_steps(5), [0.4, 0.3, 0.3])
 
 @info "Testing adding nodes"
 # example nodes, two of each type
-n1 = plain_node("n1", time_series, S, T)
-n2 = plain_node("n2", time_series, S, T)
+n1 = energy_node("n1", time_series, S, T)
+n2 = energy_node("n2", time_series, S, T)
 n3 = storage_node("n3", 1.0, 1.0, 1.0, 0.1, time_series, S, T, 0.3)
 n4 = storage_node("n4", 1.0, 1.0, 1.0, 0.1, time_series, S, T, 0.4)
 n5 = commodity_node("n5", time_series, S, T)
@@ -128,7 +128,7 @@ n7 = market_node("n7", time_series, S, T)
 n8 = market_node("n8", time_series, S, T)
 
 # Adding nodes manually and get_names function works
-structure.plain_nodes = [n1]
+structure.energy_nodes = [n1]
 structure.storage_nodes = [n3]
 structure.commodity_nodes = [n5]
 structure.market_nodes = [n7]
@@ -136,7 +136,7 @@ structure.market_nodes = [n7]
 @test get_names(structure, nodes=true, processes=true) == ["n1","n3","n5","n7"]
 
 # Adding wrong types of nodes does not work
-@test_throws MethodError structure.plain_nodes = [n1, n2, n3]
+@test_throws MethodError structure.energy_nodes = [n1, n2, n3]
 @test_throws MethodError structure.storage_nodes = [n3, n4, n5]
 @test_throws MethodError structure.commodity_nodes = [n5, n6, n7]
 @test_throws MethodError structure.market_nodes = [n1, n7, n2]
@@ -169,7 +169,7 @@ structure.online_processes = [p5]
 @test get_names(structure, nodes=true) == ["n1","n2","n3","n4","n5","n6","n7","n8"]
 
 # Adding wrong types of processes does not work
-@test_throws MethodError structure.plain_nodes = [p1, p3]
+@test_throws MethodError structure.energy_nodes = [p1, p3]
 @test_throws MethodError structure.storage_nodes = [p3, p5]
 @test_throws MethodError structure.commodity_nodes = [p5, p2]
 
@@ -187,10 +187,10 @@ add_processes!(structure, [p4, p6])
 
 @info "Testing adding flows"
 # Flows for testing model logic specific constraints
-# plain node - plain node
+# energy node - energy node
 f1 = transfer_flow("n1", "n2")
 
-# plain node - storage node
+# energy node - storage node
 f2 = transfer_flow("n2", "n3")
 
 # node/process - commodity node ERROR
@@ -217,7 +217,7 @@ fX8b = process_flow("n4", "p3", 4.0, 1.0, 1.0)
 # commodity node - spinning process
 f9 = process_flow("n6", "p1", 4.0, 1.0, 0.1)
 
-# vre process - plain node
+# vre process - energy node
 f10 = process_flow("p3", "n2", 4.0, 1.0, 1.0)
 
 # node - online process
@@ -235,7 +235,7 @@ fX12d = process_flow("n7", "p1", 8.0, 1.0, 0.1)
 fX13a, fX13b = market_flow("n1", "p1")
 fX13c = transfer_flow("n1", "p1")
 
-# plain node - market node for all but MarketFlow types ERROR
+# energy node - market node for all but MarketFlow types ERROR
 fX14a = transfer_flow("n1", "n8")
 fX14b = process_flow("n1", "n8",  8.0, 1.0, 0.1)
 

@@ -7,8 +7,8 @@ efficiency = [[0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0
 cf = [[0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1]]
 
 # example nodes, two of each type
-n1 = plain_node("n1", time_series, S, T)
-n2 = plain_node("n2", time_series, S, T)
+n1 = energy_node("n1", time_series, S, T)
+n2 = energy_node("n2", time_series, S, T)
 n3 = storage_node("n3", 1.0, 1.0, 4.0, 0.1, time_series, S, T, 0.3)
 n4 = storage_node("n4", 1.0, 1.0, 5.0, 0.1, time_series, S, T, 0.4)
 n5 = commodity_node("n5", time_series, S, T)
@@ -101,7 +101,7 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 
 @test !isempty(shortage)
 @test !isempty(surplus)
-# check all storage and plain nodes (2+2) have a variable
+# check all storage and energy nodes (2+2) have a variable
 @test length(surplus) == length(shortage)
 @test length(surplus) == (2+2)*3*5
 
@@ -115,7 +115,7 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 @test get(shortage, ("n1", 5, 3), 0.0) == 0.0
 @test get(surplus, ("n1", 5, 3), 0.0) == 0.0
 
-# check only and exactly existing plain and storage nodes have variables
+# check only and exactly existing energy and storage nodes have variables
 @test issetequal( Set([n[1] for n in keys(shortage)]) , Set(["n1", "n2", "n3", "n4"]))
 @test issetequal( Set([n[1] for n in keys(surplus)]) , Set(["n1", "n2", "n3", "n4"]))
 

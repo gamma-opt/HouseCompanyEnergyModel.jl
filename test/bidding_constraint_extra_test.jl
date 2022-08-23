@@ -8,7 +8,7 @@ structure = ModelStructure(S, T, [0.4, 0.3, 0.3])
 time_series = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
 # example nodes, two of each type
-n1 = plain_node("n1", time_series, S, T)
+n1 = energy_node("n1", time_series, S, T)
 n3 = storage_node("n3", 1.0, 1.0, 4.0, 0.1, time_series, S, T, 0.3)
 n7 = market_node("n7", time_series, S, T)
 n8 = market_node("n8", time_series, S, T)

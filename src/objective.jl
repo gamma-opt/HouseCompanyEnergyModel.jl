@@ -79,7 +79,7 @@ function declare_objective(model::Model, structure::ModelStructure,
 
 
     # -- Penalty costs --
-    balance_nodes = [structure.plain_nodes..., structure.storage_nodes...]
+    balance_nodes = [structure.energy_nodes..., structure.storage_nodes...]
     penalty_cost = @expression(model, sum(π[s] * penalty * (shortage_variables[n.name, s, t] + surplus_variables[n.name, s, t])
                                     for n in balance_nodes, t in T, s in S))
 

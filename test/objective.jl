@@ -17,7 +17,7 @@ structure = ModelStructure(S, T, [0.1, 0.9])
 @info "Commodity costs"
 n5 = commodity_node("n5", time_series, S, T)
 n6 = commodity_node("n6", time_series, S, T)
-n2 = plain_node("n2", time_series, S, T)
+n2 = energy_node("n2", time_series, S, T)
 p1 = spinning_process("p1", efficiency, S, T)
 f4 = transfer_flow("n5", "n2")
 f9 = process_flow("n6", "p1", 2.0, 0.0, 0.1)
@@ -46,7 +46,7 @@ obj = declare_objective(model, structure, f, shortage, surplus, 100.0)
 @info "Market costs"
 n7 = market_node("n7", price, S, T)
 n8 = market_node("n8", price, S, T)
-n1 = plain_node("n1", time_series, S, T)
+n1 = energy_node("n1", time_series, S, T)
 n3 = storage_node("n3", 1.0, 1.0, 1.0, 0.1, time_series, S, T, 0.3)
 f5a, f5b = market_flow("n1", "n7")
 f5c, f5d = market_flow("n3", "n8")
@@ -123,7 +123,7 @@ obj = declare_objective(model, structure, f, shortage, surplus, 100.0, start)
 
 
 @info "Penalty costs"
-# plain nodes
+# energy nodes
 @test coefficient(obj, shortage["n1", 1, 1]) == 10
 @test coefficient(obj, shortage["n1", 1, 2]) == 10
 @test coefficient(obj, surplus["n1", 1, 3]) == 10

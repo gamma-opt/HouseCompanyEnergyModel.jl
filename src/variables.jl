@@ -91,7 +91,7 @@ end
 """
     function shortage_surplus_variables(model::Model, structure::ModelStructure)
 
-Declare shortage and surplus JuMP variables for all plain and storage nodes with lower bounds declared.
+Declare shortage and surplus JuMP variables for all energy and storage nodes with lower bounds declared.
 
 Return shortage and surplus variables in Dict{NodeTuple, VariableRef}, Dict{NodeTuple, VariableRef} format.
 """
@@ -103,8 +103,8 @@ function shortage_surplus_variables(model::Model, structure::ModelStructure)
     shortage_variables = Dict{NodeTuple, VariableRef}()
     surplus_variables = Dict{NodeTuple, VariableRef}()
    
-    # plain nodes and storage nodes are the only ones were balance is maintained (not in commodity or market nodes)
-    balance_nodes = [structure.plain_nodes..., structure.storage_nodes...]
+    # energy balance in maintained over energy nodes and storage nodes
+    balance_nodes = [structure.energy_nodes..., structure.storage_nodes...]
 
     for n in balance_nodes, s in S, t in T
 
