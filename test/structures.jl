@@ -24,23 +24,19 @@ not_time_series = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5]]
 # Energy node 1
 @test isa(energy_node("n1", time_series, S, T), AbstractNode)
 @test isa(energy_node("n1", time_series, S, T), EnergyNode)
-@test isa(EnergyNode("n1", not_time_series), EnergyNode)
 @test_throws DomainError energy_node("n1", not_time_series, S , T)
 
 # Storage node 2
-@test isa(StorageNode("n2", 1.0, 1.0, 1.0, 0.1, not_time_series, 0.3), StorageNode)
 @test isa(storage_node("n2", 1.0, 1.0, 1.0, 0.1, time_series, S, T, 0.3), AbstractNode)
 @test isa(storage_node("n2", 1.0, 1.0, 1.0, 0.1, time_series, S, T, 0.3), StorageNode)
 @test_throws DomainError storage_node("n2", 1.0, 1.0, 1.0, 0.1, not_time_series, S , T, 0.3)
 
 # Commodity node 3
-@test isa(CommodityNode("n3", not_time_series), CommodityNode)
 @test isa(commodity_node("n3", time_series, S, T), AbstractNode)
 @test isa(commodity_node("n3", time_series, S, T), CommodityNode)
 @test_throws DomainError commodity_node("n3", not_time_series, S , T)
 
 # Market node 4
-@test isa(MarketNode("n4", not_time_series), MarketNode)
 @test isa(market_node("n4", time_series, S, T), AbstractNode)
 @test isa(market_node("n4", time_series, S, T), MarketNode)
 @test_throws DomainError market_node("n4", not_time_series, S , T)
@@ -59,7 +55,6 @@ not_efficiency = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
 # Spinning process 1
-@test isa(SpinningProcess("p1", not_time_series), SpinningProcess)
 @test isa(SpinningProcess("p1", efficiency), SpinningProcess)
 @test isa(spinning_process("p1", efficiency, S, T), AbstractProcess)
 @test isa(spinning_process("p1", efficiency, S, T), SpinningProcess)
@@ -67,7 +62,6 @@ not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 @test_throws DomainError spinning_process("p1", not_efficiency, S , T)
 
 # VRE process 2
-@test isa(VREProcess("p2", not_time_series), VREProcess)
 @test isa(VREProcess("p2", cf), VREProcess)
 @test isa(vre_process("p2", cf, S, T), AbstractProcess)
 @test isa(vre_process("p2", cf, S, T), VREProcess)
@@ -75,7 +69,6 @@ not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 @test_throws DomainError vre_process("p2", not_cf, S , T)
 
 # Online process 3
-@test isa(OnlineProcess("p3", not_time_series, 0.1, 1, 1, 1.1, 2), OnlineProcess)
 @test isa(OnlineProcess("p3", efficiency, 0.1, 1, 1, 1.1, 1), OnlineProcess)
 @test isa(online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 1), OnlineProcess)
 @test isa(online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 0), AbstractProcess)
@@ -92,6 +85,7 @@ not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 @test isa(ProcessFlow("n1", "p1", 3.0, 1.0, 0.1), AbstractFlow)
 @test isa(process_flow("n1", "p1", 3.0, 1.0, 0.1), ProcessFlow)
 @test_throws DomainError process_flow("p1", "p1", 3.0, 1.0, 0.1)
+# test incorrect (negative) capacity value
 @test_throws DomainError process_flow("n1", "p1", -1.0, 1.0, 0.1)
 # test incorrect ramp rate value
 @test_throws DomainError process_flow("n1", "p1", 3.0, 1.0, 2.0)  
@@ -169,9 +163,9 @@ structure.online_processes = [p5]
 @test get_names(structure, nodes=true) == ["n1","n2","n3","n4","n5","n6","n7","n8"]
 
 # Adding wrong types of processes does not work
-@test_throws MethodError structure.energy_nodes = [p1, p3]
-@test_throws MethodError structure.storage_nodes = [p3, p5]
-@test_throws MethodError structure.commodity_nodes = [p5, p2]
+@test_throws MethodError structure.spinning_processes = [p1, p3]
+@test_throws MethodError structure.vre_processes = [p3, p5]
+@test_throws MethodError structure.online_processes = [p5, p2]
 
 # add_nodes function works
 add_processes!(structure, [p2])
