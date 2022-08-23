@@ -17,12 +17,12 @@ n7 = market_node("n7", time_series, S, T)
 n8 = market_node("n8", time_series, S, T)
 
 # example processes, two of each type
-p1 = plain_unit_process("p1", efficiency, S, T)
-p2 = plain_unit_process("p2", efficiency, S, T)
-p3 = cf_unit_process("p3", cf, S, T)
-p4 = cf_unit_process("p4", cf, S, T)
-p5 = online_unit_process("p5", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
-p6 = online_unit_process("p6", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
+p1 = spinning_process("p1", efficiency, S, T)
+p2 = spinning_process("p2", efficiency, S, T)
+p3 = vre_process("p3", cf, S, T)
+p4 = vre_process("p4", cf, S, T)
+p5 = online_process("p5", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
+p6 = online_process("p6", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
 
 # example flows
 f1 = transfer_flow("n1", "n2")

@@ -137,37 +137,37 @@ end
 
 abstract type AbstractProcess end
 
-struct PlainUnitProcess <: AbstractProcess
+struct SpinningProcess <: AbstractProcess
     name::Name
     efficiency::TimeSeries
 end
 
-function plain_unit_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps)
+function spinning_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(efficiency, S, T)
     if !all(0 <= efficiency[s][t] <= 1 for s in S, t in T)
         throw(DomainError("Efficiency values must be between 0 and 1."))
     end
 
-    PlainUnitProcess(name, efficiency)
+    SpinningProcess(name, efficiency)
 end
 
 
-struct CFUnitProcess <: AbstractProcess
+struct VREProcess <: AbstractProcess
     name::Name
     cf::TimeSeries
 end
 
-function cf_unit_process(name::Name, cf::TimeSeries, S::Scenarios, T::TimeSteps)
+function vre_process(name::Name, cf::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(cf, S, T)
 
     if !all(0 <= cf[s][t] <= 1 for s in S, t in T)
         throw(DomainError("Capacity factor values must be between 0 and 1."))
     end
 
-    CFUnitProcess(name, cf)
+    VREProcess(name, cf)
 end
 
-struct OnlineUnitProcess <: AbstractProcess
+struct OnlineProcess <: AbstractProcess
     name::Name
     efficiency::TimeSeries
     min_load::Float64
@@ -177,7 +177,7 @@ struct OnlineUnitProcess <: AbstractProcess
     initial_status::Int
 end
 
-function online_unit_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps,
+function online_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps,
     min_load::Float64, min_online::Int, min_offline::Int,
     start_cost::Float64, initial_status::Int=1)
     
@@ -190,7 +190,7 @@ function online_unit_process(name::Name, efficiency::TimeSeries, S::Scenarios, T
         throw(DomainError("Initial status must be 0 or 1."))
     end
 
-    OnlineUnitProcess(name, efficiency, min_load, min_online, min_offline, start_cost, initial_status)
+    OnlineProcess(name, efficiency, min_load, min_online, min_offline, start_cost, initial_status)
 end
 
 
@@ -299,9 +299,9 @@ end
         storage_nodes::Vector{StorageNode}
         commodity_nodes::Vector{CommodityNode}
         market_nodes::Vector{MarketNode}
-        plain_processes::Vector{PlainUnitProcess}
-        cf_processes::Vector{CFUnitProcess}
-        online_processes::Vector{OnlineUnitProcess}
+        spinning_processes::Vector{SpinningProcess}
+        vre_processes::Vector{VREProcess}
+        online_processes::Vector{OnlineProcess}
         process_flows::Vector{ProcessFlow}
         transfer_flows::Vector{TransferFlow}
         market_flows::Vector{MarketFlow}
@@ -321,9 +321,9 @@ mutable struct ModelStructure
     storage_nodes::Vector{StorageNode}
     commodity_nodes::Vector{CommodityNode}
     market_nodes::Vector{MarketNode}
-    plain_processes::Vector{PlainUnitProcess}
-    cf_processes::Vector{CFUnitProcess}
-    online_processes::Vector{OnlineUnitProcess}
+    spinning_processes::Vector{SpinningProcess}
+    vre_processes::Vector{VREProcess}
+    online_processes::Vector{OnlineProcess}
     process_flows::Vector{ProcessFlow}
     transfer_flows::Vector{TransferFlow}
     market_flows::Vector{MarketFlow}
@@ -354,8 +354,8 @@ function get_names(structure::ModelStructure; nodes::Bool=false, processes::Bool
     end
 
     if processes
-        push!(all_names, map(n -> n.name, structure.plain_processes)...)
-        push!(all_names, map(n -> n.name, structure.cf_processes)...)
+        push!(all_names, map(n -> n.name, structure.spinning_processes)...)
+        push!(all_names, map(n -> n.name, structure.vre_processes)...)
         push!(all_names, map(n -> n.name, structure.online_processes)...)
     end
     return all_names
@@ -424,13 +424,13 @@ function add_processes!(structure::ModelStructure, processes::Vector{N}) where N
             throw(DomainError("Name $p.name is not unique. Name must be unique."))
         end
 
-        if isa(p, PlainUnitProcess)
-            push!(structure.plain_processes, p)
+        if isa(p, SpinningProcess)
+            push!(structure.spinning_processes, p)
 
-        elseif isa(p, CFUnitProcess)
-            push!(structure.cf_processes, p)
+        elseif isa(p, VREProcess)
+            push!(structure.vre_processes, p)
 
-        elseif isa(p, OnlineUnitProcess)
+        elseif isa(p, OnlineProcess)
             push!(structure.online_processes, p)
 
         else
@@ -446,7 +446,7 @@ function add_flows!(structure::ModelStructure, flows::Vector{N}) where N<:Abstra
     processes = get_names(structure, processes=true)
     market_nodes = (n.name for n in structure.market_nodes)
     commodity_nodes = (n.name for n in structure.commodity_nodes)
-    cf_processes = (p.name for p in structure.cf_processes)
+    vre_processes = (p.name for p in structure.vre_processes)
     flow_names = get_flows(structure, names=true)
 
     for f in flows
@@ -489,8 +489,8 @@ function add_flows!(structure::ModelStructure, flows::Vector{N}) where N<:Abstra
         elseif f.sink in commodity_nodes
             throw(DomainError("A commodity node cannot be a sink. Issue in ($(f.source) -> $(f.sink))"))
         
-        elseif f.sink in cf_processes
-            throw(DomainError("A CF process cannot be a sink. Issue in ($(f.source) -> $(f.sink))"))
+        elseif f.sink in vre_processes
+            throw(DomainError("A VRE process cannot be a sink. Issue in ($(f.source) -> $(f.sink))"))
 
         elseif f.source in market_nodes && !(f.sink in nodes)
             throw(DomainError("A market node cannot be a connected to a unit process. Issue in ($(f.source) -> $(f.sink))"))

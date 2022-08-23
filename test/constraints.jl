@@ -17,9 +17,9 @@ n3 = storage_node("n3", 2.0, 6.0, 20.0, 0.5, demand, S, T, 10) #storage node has
 n5 = commodity_node("n5", time_series, S, T)
 n7 = market_node("n7", price, S, T)
 
-p1 = plain_unit_process("p1", efficiency, S, T)
-p3 = cf_unit_process("p3", cf, S, T)
-p5 = online_unit_process("p5", efficiency, S, T, 0.1, 1, 1, 8.0, 1)
+p1 = spinning_process("p1", efficiency, S, T)
+p3 = vre_process("p3", cf, S, T)
+p5 = online_process("p5", efficiency, S, T, 0.1, 1, 1, 8.0, 1)
 
 f_a = process_flow("n5", "p5", 30.0, 2.0, 0.1)
 f_b = process_flow("n5", "p1", 30.0, 2.0, 0.2)
@@ -111,13 +111,13 @@ c4 = process_flow_bound_constraints(model, structure, f, online)
 # Check constraint generated for each process flow (5), scenario (2) and time step (3)
 @test length(c4) == 5 * 2 * 3
 
-# process flows of plain processes
+# process flows of spinning processes
 @test string(c4["p1", "n3", 1, 1]) == "ConstraintRef[f(p1, n3, s1, t1) ∈ [0.0, 6.0]]"
 @test string(c4["p1", "n3", 2, 2]) == "ConstraintRef[f(p1, n3, s2, t2) ∈ [0.0, 6.0]]"
 @test string(c4["n5", "p1", 1, 3]) == "ConstraintRef[f(n5, p1, s1, t3) ∈ [0.0, 30.0]]"
 @test string(c4["n5", "p1", 2, 3]) == "ConstraintRef[f(n5, p1, s2, t3) ∈ [0.0, 30.0]]"
 
-# process flows of cf process
+# process flows of vre process
 @test string(c4["p3", "n1", 1, 1]) == "ConstraintRef[f(p3, n1, s1, t1) ∈ [0.0, 4.0]]"
 @test string(c4["p3", "n1", 1, 2]) == "ConstraintRef[f(p3, n1, s1, t2) ∈ [0.0, 4.0]]"
 @test string(c4["p3", "n1", 1, 3]) == "ConstraintRef[f(p3, n1, s1, t3) ∈ [0.0, 4.0]]"
@@ -141,10 +141,10 @@ c4 = process_flow_bound_constraints(model, structure, f, online)
 @info "Ramp rate constraints"
 c5 = process_ramp_rate_constraints(model, structure, f, start, stop)
 
-# Check constraint generated for each process flow connected to plain or online process (4), scenario (2) and time steps 2:length(T) (2)
+# Check constraint generated for each process flow connected to spinning or online process (4), scenario (2) and time steps 2:length(T) (2)
 @test length(c5) == 4 * 2 * 2
 
-# plain process constant ramp rates
+# spinning process constant ramp rates
 @test string(c5["n5", "p1", 2, 2]) == "ConstraintRef[-f(n5, p1, s2, t1) + f(n5, p1, s2, t2) ∈ [-6.0, 6.0]]"
 @test string(c5["n5", "p1", 2, 3]) == "ConstraintRef[-f(n5, p1, s2, t2) + f(n5, p1, s2, t3) ∈ [-6.0, 6.0]]"
 @test string(c5["p1", "n3", 1, 2]) == "ConstraintRef[-f(p1, n3, s1, t1) + f(p1, n3, s1, t2) ∈ [-0.6000000000000001, 0.6000000000000001]]"
@@ -170,7 +170,7 @@ c5 = process_ramp_rate_constraints(model, structure, f, start, stop)
 @info "Efficiency constraints"
 c6 = process_efficiency_constraints(model, structure, f)
 
-# Check constraint generated for each plain and online process (2), scenario (2) and time step (3)
+# Check constraint generated for each spinning and online process (2), scenario (2) and time step (3)
 @test length(c6) == 2 * 2 * 3
 
 # Efficiency of process p1

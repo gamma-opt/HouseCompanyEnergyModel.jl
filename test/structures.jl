@@ -58,31 +58,31 @@ not_efficiency = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 # time series and values not [0,1]
 not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
-# Plain process 1
-@test isa(PlainUnitProcess("p1", not_time_series), PlainUnitProcess)
-@test isa(PlainUnitProcess("p1", efficiency), PlainUnitProcess)
-@test isa(plain_unit_process("p1", efficiency, S, T), AbstractProcess)
-@test isa(plain_unit_process("p1", efficiency, S, T), PlainUnitProcess)
-@test_throws DomainError plain_unit_process("p1", not_time_series, S , T)
-@test_throws DomainError plain_unit_process("p1", not_efficiency, S , T)
+# Spinning process 1
+@test isa(SpinningProcess("p1", not_time_series), SpinningProcess)
+@test isa(SpinningProcess("p1", efficiency), SpinningProcess)
+@test isa(spinning_process("p1", efficiency, S, T), AbstractProcess)
+@test isa(spinning_process("p1", efficiency, S, T), SpinningProcess)
+@test_throws DomainError spinning_process("p1", not_time_series, S , T)
+@test_throws DomainError spinning_process("p1", not_efficiency, S , T)
 
-# CF process 2
-@test isa(CFUnitProcess("p2", not_time_series), CFUnitProcess)
-@test isa(CFUnitProcess("p2", cf), CFUnitProcess)
-@test isa(cf_unit_process("p2", cf, S, T), AbstractProcess)
-@test isa(cf_unit_process("p2", cf, S, T), CFUnitProcess)
-@test_throws DomainError cf_unit_process("p2", not_time_series, S , T)
-@test_throws DomainError cf_unit_process("p2", not_cf, S , T)
+# VRE process 2
+@test isa(VREProcess("p2", not_time_series), VREProcess)
+@test isa(VREProcess("p2", cf), VREProcess)
+@test isa(vre_process("p2", cf, S, T), AbstractProcess)
+@test isa(vre_process("p2", cf, S, T), VREProcess)
+@test_throws DomainError vre_process("p2", not_time_series, S , T)
+@test_throws DomainError vre_process("p2", not_cf, S , T)
 
 # Online process 3
-@test isa(OnlineUnitProcess("p3", not_time_series, 0.1, 1, 1, 1.1, 2), OnlineUnitProcess)
-@test isa(OnlineUnitProcess("p3", efficiency, 0.1, 1, 1, 1.1, 1), OnlineUnitProcess)
-@test isa(online_unit_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 1), OnlineUnitProcess)
-@test isa(online_unit_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 0), AbstractProcess)
-@test_throws DomainError online_unit_process("p3", not_time_series, S, T, 0.1, 1, 1, 1.1, 1)
-@test_throws DomainError online_unit_process("p3", not_efficiency, S, T, 0.1, 1, 1, 1.1, 1)
-@test_throws DomainError online_unit_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 2)
-@test_throws DomainError online_unit_process("p3", efficiency, S, T, 2.0, 1, 1, 1.1, 1)
+@test isa(OnlineProcess("p3", not_time_series, 0.1, 1, 1, 1.1, 2), OnlineProcess)
+@test isa(OnlineProcess("p3", efficiency, 0.1, 1, 1, 1.1, 1), OnlineProcess)
+@test isa(online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 1), OnlineProcess)
+@test isa(online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 0), AbstractProcess)
+@test_throws DomainError online_process("p3", not_time_series, S, T, 0.1, 1, 1, 1.1, 1)
+@test_throws DomainError online_process("p3", not_efficiency, S, T, 0.1, 1, 1, 1.1, 1)
+@test_throws DomainError online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 2)
+@test_throws DomainError online_process("p3", efficiency, S, T, 2.0, 1, 1, 1.1, 1)
 
 
 
@@ -152,17 +152,17 @@ add_nodes!(structure, [n4, n6, n8])
 
 @info "Testing adding processes"
 # example processes, two of each type
-p1 = plain_unit_process("p1", efficiency, S, T)
-p2 = plain_unit_process("p2", efficiency, S, T)
-p3 = cf_unit_process("p3", cf, S, T)
-p4 = cf_unit_process("p4", cf, S, T)
-p5 = online_unit_process("p5", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
-p6 = online_unit_process("p6", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
-pn1 = plain_unit_process("n1", efficiency, S, T)
+p1 = spinning_process("p1", efficiency, S, T)
+p2 = spinning_process("p2", efficiency, S, T)
+p3 = vre_process("p3", cf, S, T)
+p4 = vre_process("p4", cf, S, T)
+p5 = online_process("p5", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
+p6 = online_process("p6", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
+pn1 = spinning_process("n1", efficiency, S, T)
 
 # Adding processes manually and get_names function works
-structure.plain_processes = [p1]
-structure.cf_processes = [p3]
+structure.spinning_processes = [p1]
+structure.vre_processes = [p3]
 structure.online_processes = [p5]
 @test get_names(structure, processes=true) == ["p1","p3","p5"]
 @test get_names(structure, nodes=true, processes=true) == ["n1","n2","n3","n4","n5","n6","n7","n8", "p1","p3","p5"]
@@ -210,14 +210,14 @@ fX6a, fX6b = market_flow("n8", "n7")
 # process - process ERROR
 fX7 = process_flow("p1", "p6", 3.0, 1.0, 0.1)
 
-# node - cf process ERROR
+# node - vre process ERROR
 fX8a = process_flow("n3", "p3", 3.0, 1.0, 1.0)
 fX8b = process_flow("n4", "p3", 4.0, 1.0, 1.0)
 
-# commodity node - plain process
+# commodity node - spinning process
 f9 = process_flow("n6", "p1", 4.0, 1.0, 0.1)
 
-# cf process - plain node
+# vre process - plain node
 f10 = process_flow("p3", "n2", 4.0, 1.0, 1.0)
 
 # node - online process
@@ -226,12 +226,12 @@ f11a = process_flow("n5", "p5", 2.0, 1.0, 0.1)
 f11b = process_flow("p6", "n3", 1.0, 1.0, 0.1)
 
 # Flows for testing flow type specific constraints
-# market node - plain process for all flow types ERROR
+# market node - spinning process for all flow types ERROR
 fX12a, fX12b = market_flow("n7", "p1")
 fX12c = transfer_flow("n7", "p1")
 fX12d = process_flow("n7", "p1", 8.0, 1.0, 0.1)
 
-# plain process - plain node for all but ProcessFlow types ERROR
+# spinning process - spinnning node for all but ProcessFlow types ERROR
 fX13a, fX13b = market_flow("n1", "p1")
 fX13c = transfer_flow("n1", "p1")
 
@@ -269,7 +269,7 @@ add_flows!(structure, [f4, f5a, f5b, f5c, f5d])
 # add_flows! does not allow (process - process) flows
 @test_throws DomainError add_flows!(structure, [fX7])
 
-# add_flows! does not allow (node/process -> cf process) flows
+# add_flows! does not allow (node/process -> vre process) flows
 @test_throws DomainError add_flows!(structure, [fX8a])
 @test_throws DomainError add_flows!(structure, [fX8b])
 
@@ -294,14 +294,14 @@ add_flows!(structure, [f9, f10, f11a, f11b])
 # validate_network does not work when node n4 and p4 not connected
 @test_throws DomainError validate_network(structure)
 
-# add storage node - plain process to include n4
+# add storage node - spinning process to include n4
 f15 = process_flow("p2", "n4", 2.0, 1.0, 0.1)
 add_flows!(structure, [f15])
 
 # validate_network does not work when node p4 not connected
 @test_throws DomainError validate_network(structure)
 
-# add cf process - storage node to include p4
+# add vre process - storage node to include p4
 f16 = process_flow("p4", "n4", 2.0, 1.0, 1.0)
 add_flows!(structure, [f16])
 

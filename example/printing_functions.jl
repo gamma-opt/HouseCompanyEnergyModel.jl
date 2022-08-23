@@ -38,7 +38,7 @@ end
 function PV_energy_generated(structure::ModelStructure, flow_variables::Dict{FlowTuple, VariableRef})
 
     # Finding optimal buying and selling quantities
-    for p in structure.cf_processes
+    for p in structure.vre_processes
 
         # Empty array for storing net energy sums and prices
         energy = zeros(length(structure.S), length(structure.T))

@@ -11,7 +11,7 @@ S = scenarios(2)
 T = time_steps(4)
 
 PV_cf = [[1.0, 0.90, 0.90, 1.0],[0.4, 0.8, 0.5, 0.6]]
-PV = cf_unit_process("PV", PV_cf, S, T)
+PV = vre_process("PV", PV_cf, S, T)
 
 ELC_demand = -1.0*[[19, 19, 18, 17],[23, 24, 22, 22]]
 ELC = plain_node("ELC", ELC_demand, S, T)

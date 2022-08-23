@@ -18,7 +18,7 @@ structure = ModelStructure(S, T, [0.1, 0.9])
 n5 = commodity_node("n5", time_series, S, T)
 n6 = commodity_node("n6", time_series, S, T)
 n2 = plain_node("n2", time_series, S, T)
-p1 = plain_unit_process("p1", efficiency, S, T)
+p1 = spinning_process("p1", efficiency, S, T)
 f4 = transfer_flow("n5", "n2")
 f9 = process_flow("n6", "p1", 2.0, 0.0, 0.1)
 
@@ -80,8 +80,8 @@ obj = declare_objective(model, structure, f, shortage, surplus, 100.0)
 
 
 @info "VOM costs"
-p3 = cf_unit_process("p3", cf, S, T)
-p5 = online_unit_process("p5", efficiency, S, T, 0.1, 1, 1, 8.0, 0)
+p3 = vre_process("p3", cf, S, T)
+p5 = online_process("p5", efficiency, S, T, 0.1, 1, 1, 8.0, 0)
 f10 = process_flow("p3", "n2", 2.0, 10.0, 0.1)
 f11a = process_flow("n5", "p5", 4.0, 2.0, 0.1)
 
