@@ -43,7 +43,7 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 # Constraint generation
 balance = state_balance_constraints(model, structure, f, shortage, surplus)
 
-flow_bounds = process_flow_bound_constraints(model, structure, f)
+flow_bounds = process_flow_constraints(model, structure, f)
 
 objective = declare_objective(model, structure, f, shortage, surplus, 50.0)
 

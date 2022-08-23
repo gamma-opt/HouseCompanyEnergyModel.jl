@@ -84,8 +84,8 @@ function state_balance_constraints(model::Model, structure::ModelStructure,
     balance_constraints
 end
 
-# -- Energy flow through unit type processes upper and lower bound constraints --
-function process_flow_bound_constraints(model::Model, structure::ModelStructure,
+# -- Process flows' upper and lower bound constraints --
+function process_flow_constraints(model::Model, structure::ModelStructure,
     flow_variables::Dict{FlowTuple, VariableRef},
     online_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())
 
@@ -95,7 +95,7 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
     online_processes = [p.name for p in structure.online_processes]
     
     # Dictionary for constraints, to be returned from function
-    flow_bound_constraints = Dict{FlowTuple, Vector{ConstraintRef}}()
+    flow_constraints = Dict{FlowTuple, Vector{ConstraintRef}}()
 
     # Iterate through all process flows and create lower and upper bound constraints
     for f in structure.process_flows, t in structure.T, s in structure.S
@@ -105,7 +105,7 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
 
             # note: lower bound 0 already constrained in variable creation, redeclared here for readability
             c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity)
-            flow_bound_constraints[f.source, f.sink, s, t] = [c]
+            flow_constraints[f.source, f.sink, s, t] = [c]
 
 
         # Flow from a vre processes
@@ -115,7 +115,7 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
 
             # note: lower bound 0 already constrained in variable creation, redeclared here for readability
             c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity * p.cf[s][t])
-            flow_bound_constraints[f.source, f.sink, s, t] = [c]
+            flow_constraints[f.source, f.sink, s, t] = [c]
 
 
         # Flow to or from an online process
@@ -128,12 +128,12 @@ function process_flow_bound_constraints(model::Model, structure::ModelStructure,
 
             c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, s, t])
             c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] ≤ upper_bound)
-            flow_bound_constraints[f.source, f.sink, s, t] = [c_lb, c_ub]
+            flow_constraints[f.source, f.sink, s, t] = [c_lb, c_ub]
 
         end
     end
 
-    flow_bound_constraints
+    flow_constraints
 
 end
 

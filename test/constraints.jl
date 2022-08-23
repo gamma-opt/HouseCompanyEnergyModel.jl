@@ -106,7 +106,7 @@ RHS = [-1 + 0.5 *10, -5.0 + 0.5 *10]
 
 
 @info "Process flow constraints"
-c4 = process_flow_bound_constraints(model, structure, f, online)
+c4 = process_flow_constraints(model, structure, f, online)
 
 # Check constraint generated for each process flow (5), scenario (2) and time step (3)
 @test length(c4) == 5 * 2 * 3
