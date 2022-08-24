@@ -17,8 +17,8 @@ n7 = market_node("n7", time_series, S, T)
 n8 = market_node("n8", time_series, S, T)
 
 # example processes, two of each type
-p1 = spinning_process("p1", efficiency, S, T)
-p2 = spinning_process("p2", efficiency, S, T)
+p1 = flexible_process("p1", efficiency, S, T)
+p2 = flexible_process("p2", efficiency, S, T)
 p3 = vre_process("p3", cf, S, T)
 p4 = vre_process("p4", cf, S, T)
 p5 = online_process("p5", efficiency, S, T, 0.1, 1, 1, 1.1, 0)

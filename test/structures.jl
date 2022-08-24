@@ -54,12 +54,12 @@ not_efficiency = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 # time series and values not [0,1]
 not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
-# Spinning process 1
-@test isa(SpinningProcess("p1", efficiency), SpinningProcess)
-@test isa(spinning_process("p1", efficiency, S, T), AbstractProcess)
-@test isa(spinning_process("p1", efficiency, S, T), SpinningProcess)
-@test_throws DomainError spinning_process("p1", not_time_series, S , T)
-@test_throws DomainError spinning_process("p1", not_efficiency, S , T)
+# Flexible process 1
+@test isa(FlexibleProcess("p1", efficiency), FlexibleProcess)
+@test isa(flexible_process("p1", efficiency, S, T), AbstractProcess)
+@test isa(flexible_process("p1", efficiency, S, T), FlexibleProcess)
+@test_throws DomainError flexible_process("p1", not_time_series, S , T)
+@test_throws DomainError flexible_process("p1", not_efficiency, S , T)
 
 # VRE process 2
 @test isa(VREProcess("p2", cf), VREProcess)
@@ -146,16 +146,16 @@ add_nodes!(structure, [n4, n6, n8])
 
 @info "Testing adding processes"
 # example processes, two of each type
-p1 = spinning_process("p1", efficiency, S, T)
-p2 = spinning_process("p2", efficiency, S, T)
+p1 = flexible_process("p1", efficiency, S, T)
+p2 = flexible_process("p2", efficiency, S, T)
 p3 = vre_process("p3", cf, S, T)
 p4 = vre_process("p4", cf, S, T)
 p5 = online_process("p5", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
 p6 = online_process("p6", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
-pn1 = spinning_process("n1", efficiency, S, T)
+pn1 = flexible_process("n1", efficiency, S, T)
 
 # Adding processes manually and get_names function works
-structure.spinning_processes = [p1]
+structure.flexible_processes = [p1]
 structure.vre_processes = [p3]
 structure.online_processes = [p5]
 @test get_names(structure, processes=true) == ["p1","p3","p5"]
@@ -163,7 +163,7 @@ structure.online_processes = [p5]
 @test get_names(structure, nodes=true) == ["n1","n2","n3","n4","n5","n6","n7","n8"]
 
 # Adding wrong types of processes does not work
-@test_throws MethodError structure.spinning_processes = [p1, p3]
+@test_throws MethodError structure.flexible_processes = [p1, p3]
 @test_throws MethodError structure.vre_processes = [p3, p5]
 @test_throws MethodError structure.online_processes = [p5, p2]
 
@@ -208,7 +208,7 @@ fX7 = process_flow("p1", "p6", 3.0, 1.0, 0.1)
 fX8a = process_flow("n3", "p3", 3.0, 1.0, 1.0)
 fX8b = process_flow("n4", "p3", 4.0, 1.0, 1.0)
 
-# commodity node - spinning process
+# commodity node - flexible process
 f9 = process_flow("n6", "p1", 4.0, 1.0, 0.1)
 
 # vre process - energy node
@@ -220,12 +220,12 @@ f11a = process_flow("n5", "p5", 2.0, 1.0, 0.1)
 f11b = process_flow("p6", "n3", 1.0, 1.0, 0.1)
 
 # Flows for testing flow type specific constraints
-# market node - spinning process for all flow types ERROR
+# market node - flexible process for all flow types ERROR
 fX12a, fX12b = market_flow("n7", "p1")
 fX12c = transfer_flow("n7", "p1")
 fX12d = process_flow("n7", "p1", 8.0, 1.0, 0.1)
 
-# spinning process - spinnning node for all but ProcessFlow types ERROR
+# energy node - flexible process for all but ProcessFlow types ERROR
 fX13a, fX13b = market_flow("n1", "p1")
 fX13c = transfer_flow("n1", "p1")
 
@@ -288,7 +288,7 @@ add_flows!(structure, [f9, f10, f11a, f11b])
 # validate_network does not work when node n4 and p4 not connected
 @test_throws DomainError validate_network(structure)
 
-# add storage node - spinning process to include n4
+# add storage node - flexible process to include n4
 f15 = process_flow("p2", "n4", 2.0, 1.0, 0.1)
 add_flows!(structure, [f15])
 

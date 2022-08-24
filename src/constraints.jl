@@ -90,7 +90,7 @@ function process_flow_constraints(model::Model, structure::ModelStructure,
     online_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())
 
     # Names of different process types for easy access in constraint generation
-    spinning_processes = [p.name for p in structure.spinning_processes]
+    flexible_processes = [p.name for p in structure.flexible_processes]
     vre_processes = [p.name for p in structure.vre_processes]
     online_processes = [p.name for p in structure.online_processes]
     
@@ -100,8 +100,8 @@ function process_flow_constraints(model::Model, structure::ModelStructure,
     # Iterate through all process flows and create lower and upper bound constraints
     for f in structure.process_flows, t in structure.T, s in structure.S
 
-        # Flow to or from a spinning process
-        if f.source in spinning_processes || f.sink in spinning_processes
+        # Flow to or from a flexible process
+        if f.source in flexible_processes || f.sink in flexible_processes
 
             # note: lower bound 0 already constrained in variable creation, redeclared here for readability
             c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity)
@@ -138,14 +138,14 @@ function process_flow_constraints(model::Model, structure::ModelStructure,
 end
 
 
-# -- Ramp rate of spinning and online processes constraints --
+# -- Ramp rate of flexible and online processes constraints --
 function process_ramp_rate_constraints(model::Model, structure::ModelStructure, 
     flow_variables::Dict{FlowTuple, VariableRef},
     start_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}(),
     stop_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())
 
     # Names of different process types for easy access in constraint generation
-    spinning_processes = [p.name for p in structure.spinning_processes]
+    flexible_processes = [p.name for p in structure.flexible_processes]
     online_processes = [p.name for p in structure.online_processes]
 
     # ramping constraints only declared for time steps from 2nd to last
@@ -157,8 +157,8 @@ function process_ramp_rate_constraints(model::Model, structure::ModelStructure,
     # Iterate through all process flows and create lower and upper bound constraints
     for f in structure.process_flows, t in T_tail, s in structure.S
     
-        # Flow to or from a spinning process
-        if f.source in spinning_processes || f.sink in spinning_processes
+        # Flow to or from a flexible process
+        if f.source in flexible_processes || f.sink in flexible_processes
             
             c = @constraint(model, -f.ramp_rate * f.capacity 
                             ≤ flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1] 
@@ -192,8 +192,8 @@ end
 function process_efficiency_constraints(model::Model, structure::ModelStructure, 
     flow_variables::Dict{FlowTuple, VariableRef})
 
-    # Efficiency constraints apply to spinning and online processes
-    processes = [structure.spinning_processes..., structure.online_processes...]
+    # Efficiency constraints apply to flexible and online processes
+    processes = [structure.flexible_processes..., structure.online_processes...]
 
     # Dictionary for constraints, to be returned from function
     efficiency_constraints = Dict{ProcessTuple, ConstraintRef}()

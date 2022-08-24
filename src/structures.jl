@@ -137,18 +137,18 @@ end
 
 abstract type AbstractProcess end
 
-struct SpinningProcess <: AbstractProcess
+struct FlexibleProcess <: AbstractProcess
     name::Name
     efficiency::TimeSeries
 end
 
-function spinning_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps)
+function flexible_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(efficiency, S, T)
     if !all(0 <= efficiency[s][t] <= 1 for s in S, t in T)
         throw(DomainError("Efficiency values must be between 0 and 1."))
     end
 
-    SpinningProcess(name, efficiency)
+    FlexibleProcess(name, efficiency)
 end
 
 
@@ -299,7 +299,7 @@ end
         storage_nodes::Vector{StorageNode}
         commodity_nodes::Vector{CommodityNode}
         market_nodes::Vector{MarketNode}
-        spinning_processes::Vector{SpinningProcess}
+        flexible_processes::Vector{FlexibleProcess}
         vre_processes::Vector{VREProcess}
         online_processes::Vector{OnlineProcess}
         process_flows::Vector{ProcessFlow}
@@ -321,7 +321,7 @@ mutable struct ModelStructure
     storage_nodes::Vector{StorageNode}
     commodity_nodes::Vector{CommodityNode}
     market_nodes::Vector{MarketNode}
-    spinning_processes::Vector{SpinningProcess}
+    flexible_processes::Vector{FlexibleProcess}
     vre_processes::Vector{VREProcess}
     online_processes::Vector{OnlineProcess}
     process_flows::Vector{ProcessFlow}
@@ -354,7 +354,7 @@ function get_names(structure::ModelStructure; nodes::Bool=false, processes::Bool
     end
 
     if processes
-        push!(all_names, map(n -> n.name, structure.spinning_processes)...)
+        push!(all_names, map(n -> n.name, structure.flexible_processes)...)
         push!(all_names, map(n -> n.name, structure.vre_processes)...)
         push!(all_names, map(n -> n.name, structure.online_processes)...)
     end
@@ -424,8 +424,8 @@ function add_processes!(structure::ModelStructure, processes::Vector{N}) where N
             throw(DomainError("Name $p.name is not unique. Name must be unique."))
         end
 
-        if isa(p, SpinningProcess)
-            push!(structure.spinning_processes, p)
+        if isa(p, FlexibleProcess)
+            push!(structure.flexible_processes, p)
 
         elseif isa(p, VREProcess)
             push!(structure.vre_processes, p)

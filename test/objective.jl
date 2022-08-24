@@ -18,7 +18,7 @@ structure = ModelStructure(S, T, [0.1, 0.9])
 n5 = commodity_node("n5", time_series, S, T)
 n6 = commodity_node("n6", time_series, S, T)
 n2 = energy_node("n2", time_series, S, T)
-p1 = spinning_process("p1", efficiency, S, T)
+p1 = flexible_process("p1", efficiency, S, T)
 f4 = transfer_flow("n5", "n2")
 f9 = process_flow("n6", "p1", 2.0, 0.0, 0.1)
 
