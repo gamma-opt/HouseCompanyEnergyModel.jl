@@ -52,7 +52,7 @@ c1,c2 = charging_discharging_constraints(model, structure, s)
 @test length(c1) == 1 * 2 * 3
 @test length(c1) == length(c2)
 
-# Check charging constraints
+# Check charging constraints. Note that state loss parameter = 0.5.
 @test all(normalized_coefficient(c1["n3", sce, t], s["n3", sce, t]) == -1 for sce in S, t in T)
 @test all(normalized_coefficient(c1["n3", sce, t], s["n3", sce, t-1]) == 0.5 for sce in S, t in 2:length(T))
 #RHS = - n.in_flow_max - (1 - n.state_loss)*n.initial_state
@@ -72,6 +72,7 @@ RHS = 6.0 - 0.5 * 10
 # RHS = n.out_flow_max
 RHS = 6.0
 @test all(normalized_rhs(c2["n3", sce, t]) == RHS for sce in S, t in 2:length(T))
+
 
 
 
@@ -108,32 +109,24 @@ RHS = [-1 + 0.5 *10, -5.0 + 0.5 *10]
 @info "Process flow constraints"
 c4 = process_flow_constraints(model, structure, f, online)
 
-# Check constraint generated for each process flow (5), scenario (2) and time step (3)
-@test length(c4) == 5 * 2 * 3
+# Check constraint generated for each process flow connected to flexible/online process (4), scenario (2) and time step (3)
+@test length(c4) == 4 * 2 * 3
 
 # process flows of flexible processes
-@test string(c4["p1", "n3", 1, 1]) == "ConstraintRef[f(p1, n3, s1, t1) ∈ [0.0, 6.0]]"
-@test string(c4["p1", "n3", 2, 2]) == "ConstraintRef[f(p1, n3, s2, t2) ∈ [0.0, 6.0]]"
-@test string(c4["n5", "p1", 1, 3]) == "ConstraintRef[f(n5, p1, s1, t3) ∈ [0.0, 30.0]]"
-@test string(c4["n5", "p1", 2, 3]) == "ConstraintRef[f(n5, p1, s2, t3) ∈ [0.0, 30.0]]"
+@test normalized_rhs(c4["p1", "n3", 1, 1][1]) == 6.0
+@test normalized_rhs(c4["p1", "n3", 2, 2][1]) == 6.0
+@test normalized_rhs(c4["n5", "p1", 1, 3][1]) == 30.0
+@test normalized_rhs(c4["n5", "p1", 2, 3][1]) == 30.0
 
-# process flows of vre process
-@test string(c4["p3", "n1", 1, 1]) == "ConstraintRef[f(p3, n1, s1, t1) ∈ [0.0, 4.0]]"
-@test string(c4["p3", "n1", 1, 2]) == "ConstraintRef[f(p3, n1, s1, t2) ∈ [0.0, 4.0]]"
-@test string(c4["p3", "n1", 1, 3]) == "ConstraintRef[f(p3, n1, s1, t3) ∈ [0.0, 4.0]]"
-@test string(c4["p3", "n1", 2, 1]) == "ConstraintRef[f(p3, n1, s2, t1) ∈ [0.0, 0.8]]"
-@test string(c4["p3", "n1", 2, 3]) == "ConstraintRef[f(p3, n1, s2, t3) ∈ [0.0, 0.8]]"
-
-# flow variables of process flows of online process ([1] = lower bound, [2] = upper bound )
-@test all(normalized_coefficient(c4[source, sink, sce, t][1], f[source, sink, sce, t]) == -1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in T)
-@test all(normalized_coefficient(c4[source, sink, sce, t][2], f[source, sink, sce, t]) == 1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in T)
-
+# flow variables of process flows of online process ([1] = upper bound, [2] = lower bound )
+@test all(normalized_coefficient(c4[source, sink, sce, t][2], f[source, sink, sce, t]) == -1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in T)
+@test all(normalized_coefficient(c4[source, sink, sce, t][1], f[source, sink, sce, t]) == 1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in T)
 
 # online variables of process flows of online process
-@test all(normalized_coefficient(c4["n5", "p5", sce, t][1], online["p5", sce, t]) == 0.1 * 30 for sce in S, t in T)
-@test all(normalized_coefficient(c4["n5", "p5", sce, t][2], online["p5", sce, t]) == - 30.0 for sce in S, t in T)
-@test all(normalized_coefficient(c4["p5", "n1", sce, t][1], online["p5", sce, t]) == 0.1 * 5 for sce in S, t in T)
-@test all(normalized_coefficient(c4["p5", "n1", sce, t][2], online["p5", sce, t]) == - 5.0 for sce in S, t in T)
+@test all(normalized_coefficient(c4["n5", "p5", sce, t][2], online["p5", sce, t]) == 0.1 * 30 for sce in S, t in T)
+@test all(normalized_coefficient(c4["n5", "p5", sce, t][1], online["p5", sce, t]) == - 30.0 for sce in S, t in T)
+@test all(normalized_coefficient(c4["p5", "n1", sce, t][2], online["p5", sce, t]) == 0.1 * 5 for sce in S, t in T)
+@test all(normalized_coefficient(c4["p5", "n1", sce, t][1], online["p5", sce, t]) == - 5.0 for sce in S, t in T)
 
 
 
@@ -144,27 +137,39 @@ c5 = process_ramp_rate_constraints(model, structure, f, start, stop)
 # Check constraint generated for each process flow connected to flexible or online process (4), scenario (2) and time steps 2:length(T) (2)
 @test length(c5) == 4 * 2 * 2
 
-# flexible process constant ramp rates
-@test string(c5["n5", "p1", 2, 2]) == "ConstraintRef[-f(n5, p1, s2, t1) + f(n5, p1, s2, t2) ∈ [-6.0, 6.0]]"
-@test string(c5["n5", "p1", 2, 3]) == "ConstraintRef[-f(n5, p1, s2, t2) + f(n5, p1, s2, t3) ∈ [-6.0, 6.0]]"
-@test string(c5["p1", "n3", 1, 2]) == "ConstraintRef[-f(p1, n3, s1, t1) + f(p1, n3, s1, t2) ∈ [-0.6000000000000001, 0.6000000000000001]]"
-@test string(c5["p1", "n3", 1, 3]) == "ConstraintRef[-f(p1, n3, s1, t2) + f(p1, n3, s1, t3) ∈ [-0.6000000000000001, 0.6000000000000001]]"
+# Flexible process
+# ramp rate RHS (c indicates lower bound or upper bound constraint. [1] = upper bound, [2] = lower bound )
+@test all(normalized_rhs(c5["n5", "p1", sce, t][c]) == 0.2*30 for sce in S, t in 2:length(T), c in [1,2])
+@test all(normalized_rhs(c5["p1", "n3", sce, t][c]) == 0.2*6 for sce in S, t in 2:length(T), c in [1,2])
 
-# online process ramp rates ([1] = lower bound, [2] = upper bound )
 # flow variable coefficients
-@test all(normalized_coefficient(c5[source, sink, sce, t][1], f[source, sink, sce, t]) == -1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in 2:length(T))
-@test all(normalized_coefficient(c5[source, sink, sce, t][1], f[source, sink, sce, t-1]) == 1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in 2:length(T))
-@test all(normalized_coefficient(c5[source, sink, sce, t][2], f[source, sink, sce, t]) == 1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in 2:length(T))
-@test all(normalized_coefficient(c5[source, sink, sce, t][2], f[source, sink, sce, t-1]) == -1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5[source, sink, sce, t][2], f[source, sink, sce, t]) == -1 for (source, sink) in [("n5", "p1"), ("p1", "n3")], sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5[source, sink, sce, t][2], f[source, sink, sce, t-1]) == 1 for (source, sink) in [("n5", "p1"), ("p1", "n3")], sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5[source, sink, sce, t][1], f[source, sink, sce, t]) == 1 for (source, sink) in [("n5", "p1"), ("p1", "n3")], sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5[source, sink, sce, t][1], f[source, sink, sce, t-1]) == -1 for (source, sink) in [("n5", "p1"), ("p1", "n3")], sce in S, t in 2:length(T))
 
 
-# stop variable coefficient in lower bound
-@test all(normalized_coefficient(c5["n5", "p5", sce, t][1], stop["p5", sce, t]) == -(0.1*30.0 - 0.1) for sce in S, t in 2:length(T))
-@test all(normalized_coefficient(c5["p5", "n1", sce, t][1], stop["p5", sce, t]) == -(0.1*5.0 - 0.2) for sce in S, t in 2:length(T))
+# Online process
+# ramp rate RHS (c indicates lower bound or upper bound constraint. [1] = upper bound, [2] = lower bound )
+@test all(normalized_rhs(c5["n5", "p5", sce, t][c]) == 0.2*30 for sce in S, t in 2:length(T), c in [1,2])
+@test all(normalized_rhs(c5["p5", "n1", sce, t][c]) == 0.2*5 for sce in S, t in 2:length(T), c in [1,2])
 
-# start variable coefficient in upper bound
-@test all(normalized_coefficient(c5["n5", "p5", sce, t][2], start["p5", sce, t]) == -(0.1*30.0 - 0.1) for sce in S, t in 2:length(T))
-@test all(normalized_coefficient(c5["p5", "n1", sce, t][2], start["p5", sce, t]) == -(0.1*5.0 - 0.2) for sce in S, t in 2:length(T))
+
+# flow variable coefficients ([1] = upper bound, [2] = lower bound )
+@test all(normalized_coefficient(c5[source, sink, sce, t][2], f[source, sink, sce, t]) == -1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5[source, sink, sce, t][2], f[source, sink, sce, t-1]) == 1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5[source, sink, sce, t][1], f[source, sink, sce, t]) == 1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5[source, sink, sce, t][1], f[source, sink, sce, t-1]) == -1 for (source, sink) in [("n5", "p5"), ("p5", "n1")], sce in S, t in 2:length(T))
+
+# stop variable coefficients in lower bound
+@test all(normalized_coefficient(c5["n5", "p5", sce, t][2], stop["p5", sce, t]) == -(0.1*30.0 - 0.2) for sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5["p5", "n1", sce, t][2], stop["p5", sce, t]) == -(0.1*5.0 - 0.2) for sce in S, t in 2:length(T))
+
+# start variable coefficients in upper bound
+@test all(normalized_coefficient(c5["n5", "p5", sce, t][1], start["p5", sce, t]) == -(0.1*30.0 - 0.2) for sce in S, t in 2:length(T))
+@test all(normalized_coefficient(c5["p5", "n1", sce, t][1], start["p5", sce, t]) == -(0.1*5.0 - 0.2) for sce in S, t in 2:length(T))
+
+
 
 
 @info "Efficiency constraints"
@@ -217,3 +222,17 @@ c7, c8, c9 = online_functionality_constraints(model, structure, start, stop, onl
 @test all(normalized_rhs(c9["p5", sce, t][2]) == 1 for sce in S, t in 1:2)
 
 
+@info "CF flow constraints"
+c10 = cf_flow_constraints(model, structure, f)
+
+# Check constraint generated for each output process flow (3), scenario (2) and time step (3)
+@test length(c10) == 3*2*3
+
+@test all(normalized_coefficient(c10["p5", "n1", sce, t], f["p5", "n1", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_rhs(c10["p5", "n1", sce, t]) == cf[sce][t] * 5 for sce in S, t in T)
+
+@test all(normalized_coefficient(c10["p1", "n3", sce, t], f["p1", "n3", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_rhs(c10["p1", "n3", sce, t]) == cf[sce][t] * 6 for sce in S, t in T)
+
+@test all(normalized_coefficient(c10["p3", "n1", sce, t], f["p3", "n1", sce, t]) == 1 for sce in S, t in T)
+@test all(normalized_rhs(c10["p3", "n1", sce, t]) == cf[sce][t] * 8 for sce in S, t in T)

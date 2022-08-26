@@ -55,11 +55,14 @@ not_efficiency = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 
 # Flexible process 1
-@test isa(FlexibleProcess("p1", efficiency), FlexibleProcess)
-@test isa(flexible_process("p1", efficiency, S, T), AbstractProcess)
-@test isa(flexible_process("p1", efficiency, S, T), FlexibleProcess)
-@test_throws DomainError flexible_process("p1", not_time_series, S , T)
-@test_throws DomainError flexible_process("p1", not_efficiency, S , T)
+@test isa(FlexibleProcess("p1", efficiency, cf, 1), FlexibleProcess)
+@test isa(flexible_process("p1", efficiency, cf, S, T, 0), AbstractProcess)
+@test isa(flexible_process("p1", efficiency, cf, S, T, 0.3), FlexibleProcess)
+@test_throws DomainError flexible_process("p1", not_time_series, cf, S , T, 0.2)
+@test_throws DomainError flexible_process("p1", not_efficiency, cf, S , T, 0.2)
+@test_throws DomainError flexible_process("p1", efficiency, not_time_series, S , T, 0.2)
+@test_throws DomainError flexible_process("p1", efficiency, not_cf, S , T, 0.2)
+@test_throws DomainError flexible_process("p1", efficiency, cf, S , T, 2.0)
 
 # VRE process 2
 @test isa(VREProcess("p2", cf), VREProcess)
@@ -69,28 +72,31 @@ not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 @test_throws DomainError vre_process("p2", not_cf, S , T)
 
 # Online process 3
-@test isa(OnlineProcess("p3", efficiency, 0.1, 1, 1, 1.1, 1), OnlineProcess)
-@test isa(online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 1), OnlineProcess)
-@test isa(online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 0), AbstractProcess)
-@test_throws DomainError online_process("p3", not_time_series, S, T, 0.1, 1, 1, 1.1, 1)
-@test_throws DomainError online_process("p3", not_efficiency, S, T, 0.1, 1, 1, 1.1, 1)
-@test_throws DomainError online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 2)
-@test_throws DomainError online_process("p3", efficiency, S, T, 2.0, 1, 1, 1.1, 1)
-@test_throws MethodError online_process("p3", efficiency, S, T, 2, 1.1, 1, 3, 1)
-@test_throws MethodError online_process("p3", efficiency, S, T, 2, 1, 1.2, 3, 1)
-
+@test isa(OnlineProcess("p3", efficiency, cf, 0.1, 1, 1, 0.2, 1.1, 1), OnlineProcess)
+@test isa(online_process("p3", efficiency, cf, S, T, 0.1, 1, 1, 0.2, 1.1, 1), OnlineProcess)
+@test isa(online_process("p3", efficiency, cf, S, T, 0.1, 1, 1, 0.2, 1.1, 0), AbstractProcess)
+@test_throws DomainError online_process("p3", not_time_series, cf, S, T, 0.1, 1, 1, 0.2, 1.1, 1)
+@test_throws DomainError online_process("p3", not_efficiency, cf, S, T, 0.1, 1, 1, 0.2, 1.1, 1)
+@test_throws DomainError online_process("p3", efficiency, not_time_series, S, T, 0.1, 1, 1, 0.2, 1.1, 1)
+@test_throws DomainError online_process("p3", efficiency, not_cf, S, T, 0.1, 1, 1, 0.2, 1.1, 1)
+# testing wrong parameter values
+@test_throws DomainError online_process("p3", efficiency, cf, S, T, 2.0, 1, 1, 0.2, 1.1, 1)
+@test_throws DomainError online_process("p3", efficiency, cf, S, T, 0.1, -1, 1, 0.2, 1.1, 0)
+@test_throws DomainError online_process("p3", efficiency, cf, S, T, 0.1, 1, -1, 0.2, 1.1, 1)
+@test_throws DomainError online_process("p3", efficiency, cf, S, T, 0.1, 1, 1, 0.2, 1.1, 2)
+# testing parameter types
+@test_throws MethodError online_process("p3", efficiency, cf, S, T, 2, 1.1, 1, 0.2, 3, 1)
+@test_throws MethodError online_process("p3", efficiency, cf, S, T, 2, 1, 1.2, 0.2, 3, 1)
 
 
 
 @info "Testing flows"
 # Process Flow
-@test isa(ProcessFlow("n1", "p1", 3.0, 1.0, 0.1), AbstractFlow)
-@test isa(process_flow("n1", "p1", 3, 1, 0), ProcessFlow)
-@test_throws DomainError process_flow("p1", "p1", 3.0, 1.0, 0.1)
+@test isa(ProcessFlow("n1", "p1", 3.0, 1.0), AbstractFlow)
+@test isa(process_flow("n1", "p1", 3, 1), ProcessFlow)
+@test_throws DomainError process_flow("p1", "p1", 3.0, 1.0)
 # test incorrect (negative) capacity value
-@test_throws DomainError process_flow("n1", "p1", -1.0, 1.0, 0.1)
-# test incorrect ramp rate value
-@test_throws DomainError process_flow("n1", "p1", 3.0, 1, 2.0)  
+@test_throws DomainError process_flow("n1", "p1", -1.0, 1.0)
 
 # Transfer Flow
 @test isa(TransferFlow("n1", "n2"), AbstractFlow)

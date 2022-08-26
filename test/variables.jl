@@ -90,7 +90,8 @@ s = state_variables(model, structure)
 @test issetequal( Set([n[1] for n in keys(s)]) , Set(["n3", "n4"]))
 
 # Test lower and upper bound
-@test all(upper_bound(s[n.name, sce, t]) == n.state_max for n in [n3, n4], sce in S, t in T )
+@test all(upper_bound(s["n3", sce, t]) == 4 for sce in S, t in T )
+@test all(upper_bound(s["n4", sce, t]) == 5 for sce in S, t in T )
 @test all(lower_bound(s[n.name, sce, t]) == 0.0 for n in [n3, n4], sce in S, t in T )
 
 

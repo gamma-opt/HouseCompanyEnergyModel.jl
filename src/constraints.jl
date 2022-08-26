@@ -91,7 +91,6 @@ function process_flow_constraints(model::Model, structure::ModelStructure,
 
     # Names of different process types for easy access in constraint generation
     flexible_processes = [p.name for p in structure.flexible_processes]
-    vre_processes = [p.name for p in structure.vre_processes]
     online_processes = [p.name for p in structure.online_processes]
     
     # Dictionary for constraints, to be returned from function
@@ -103,38 +102,27 @@ function process_flow_constraints(model::Model, structure::ModelStructure,
         # Flow to or from a flexible process
         if f.source in flexible_processes || f.sink in flexible_processes
 
-            # note: lower bound 0 already constrained in variable creation, redeclared here for readability
-            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity)
-            flow_constraints[f.source, f.sink, s, t] = [c]
-
-
-        # Flow from a vre processes
-        elseif f.source in vre_processes
-            # Find VREProcess structure of process in question
-            p = filter(p -> p.name == f.source, structure.vre_processes)[1]
-
-            # note: lower bound 0 already constrained in variable creation, redeclared here for readability
-            c = @constraint(model, 0 ≤ flow_variables[f.source, f.sink, s, t] ≤ f.capacity * p.cf[s][t])
-            flow_constraints[f.source, f.sink, s, t] = [c]
+            # Upper bound constraint
+            c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] ≤ f.capacity)
+            flow_constraints[f.source, f.sink, s, t] = [c_ub]
 
 
         # Flow to or from an online process
         elseif f.source in online_processes || f.sink in online_processes
-            # Find OnlineUnitProcess structure of process in question (notice add_flows would not allow process-process connection so this is safe)
+            # Find OnlineProcess structure of process in question (add_flows ensures process flow is always node-process connection so this is safe)
             p = filter(p -> p.name == f.source || p.name == f.sink, structure.online_processes)[1]
 
-            lower_bound = @expression(model, p.min_load * f.capacity * online_variables[p.name, s, t])
             upper_bound = @expression(model, f.capacity * online_variables[p.name, s, t])
+            lower_bound = @expression(model, p.min_load * f.capacity * online_variables[p.name, s, t])
 
-            c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, s, t])
             c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] ≤ upper_bound)
-            flow_constraints[f.source, f.sink, s, t] = [c_lb, c_ub]
+            c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, s, t])
+            flow_constraints[f.source, f.sink, s, t] = [c_ub, c_lb]
 
         end
     end
 
     flow_constraints
-
 end
 
 
@@ -159,28 +147,34 @@ function process_ramp_rate_constraints(model::Model, structure::ModelStructure,
     
         # Flow to or from a flexible process
         if f.source in flexible_processes || f.sink in flexible_processes
+
+            # Find FlexibleProcess structure of process in question (notice add_flows would not allow process-process connection so this is safe)
+            p = filter(p -> p.name == f.source || p.name == f.sink, structure.flexible_processes)[1]
             
-            c = @constraint(model, -f.ramp_rate * f.capacity 
-                            ≤ flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1] 
-                            ≤ f.ramp_rate * f.capacity)
-            ramp_rate_constraints[f.source, f.sink, s, t] = [c]
+            c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1] 
+                            ≤ p.ramp_rate * f.capacity)
+
+            c_lb = @constraint(model, -p.ramp_rate * f.capacity 
+                            ≤ flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1])
+
+            ramp_rate_constraints[f.source, f.sink, s, t] = [c_ub, c_lb]
 
 
         # Flow to or from an online process
         elseif f.source in online_processes || f.sink in online_processes
             
-            # Find OnlineUnitProcess structure of process in question (notice add_flows would not allow process-process connection so this is safe)
+            # Find OnlineProcess structure of process in question (notice add_flows would not allow process-process connection so this is safe)
             p = filter(p -> p.name == f.source || p.name == f.sink, structure.online_processes)[1]
 
-            lower_bound = @expression(model, - f.ramp_rate * f.capacity
-                                - max(0, p.min_load * f.capacity - f.ramp_rate) * stop_variables[p.name, s, t])
+            lower_bound = @expression(model, - p.ramp_rate * f.capacity
+                                - max(0, p.min_load * f.capacity - p.ramp_rate) * stop_variables[p.name, s, t])
 
-            upper_bound = @expression(model, f.ramp_rate * f.capacity
-                                + max(0, p.min_load * f.capacity - f.ramp_rate) * start_variables[p.name, s, t])
+            upper_bound = @expression(model, p.ramp_rate * f.capacity
+                                + max(0, p.min_load * f.capacity - p.ramp_rate) * start_variables[p.name, s, t])
 
             c_lb = @constraint(model, lower_bound ≤ flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1])
             c_ub = @constraint(model, flow_variables[f.source, f.sink, s, t] - flow_variables[f.source, f.sink, s, t-1] ≤ upper_bound)
-            ramp_rate_constraints[f.source, f.sink, s, t] = [c_lb, c_ub]
+            ramp_rate_constraints[f.source, f.sink, s, t] = [c_ub, c_lb]
 
         end # note: vre processes cannot be ramped -> no ramp constraints
     end
@@ -274,3 +268,29 @@ function online_functionality_constraints(model::Model, structure::ModelStructur
     on_off_constraints, min_online_constraints, min_offline_constraints
 end
 
+function cf_flow_constraints(model::Model, structure::ModelStructure,
+    flow_variables::Dict{FlowTuple, VariableRef})
+
+        # Fetch names and structs of processes for easy access during constraint generation
+        process_names = get_names(structure, processes=true)
+        processes = [structure.flexible_processes..., structure.vre_processes..., structure.online_processes...]
+
+        # Dictionary for constraints, to be returned from function
+        cf_constraints = Dict{FlowTuple, ConstraintRef}()
+
+        for f in structure.process_flows, s in structure.S, t in structure.T
+            # Create constraints only for output flows of processes
+            if f.source in process_names
+
+                # Find VREProcess structure of process in question
+                p = filter(p -> p.name == f.source, processes)[1]
+
+                c = @constraint(model, flow_variables[f.source, f.sink, s, t] ≤ f.capacity * p.cf[s][t])
+                
+                cf_constraints[f.source, f.sink, s, t] = c
+
+            end
+        end
+
+        cf_constraints
+end
