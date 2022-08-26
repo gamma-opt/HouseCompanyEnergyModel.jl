@@ -3,8 +3,13 @@ using JuMP
 using PredicerTestVersion
 using Gurobi
 
+# Define market bidding constraint function that is to be tested
+include("constraint.jl")
+
 # Get printing functions for results
 include("printing_functions.jl")
+
+
 
 # -- Model set up --
 S = scenarios(2)
@@ -33,6 +38,8 @@ add_flows!(structure, [PV_generation, ELC_bought, ELC_sold])
 
 validate_network(structure)
 
+
+
 # -- Initialise JuMP model --
 model = Model()
 
@@ -55,7 +62,7 @@ set_optimizer(model, optimizer)
 
 
 
-# -- Optimise without bid constraint --
+# -- Optimise without bidding constraint --
 optimize!(model)
 
 if any(value(i) != 0 for i in values(shortage)) || any(value(i) != 0 for i in values(surplus))
@@ -76,9 +83,8 @@ println("Objective per scenario: $obj_sce \n\n\n")
 
 
 
-# -- Reoptimise without bid constraint --
+# -- Reoptimise without bidding constraint --
 # Add bid constraint
-
 bid_constraints = market_bidding_constraints(model, structure, f)
 
 optimize!(model)

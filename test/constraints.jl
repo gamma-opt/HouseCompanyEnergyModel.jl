@@ -217,26 +217,3 @@ c7, c8, c9 = online_functionality_constraints(model, structure, start, stop, onl
 @test all(normalized_rhs(c9["p5", sce, t][2]) == 1 for sce in S, t in 1:2)
 
 
-
-@info "Market bidding constraints"
-c10 = market_bidding_constraints(model, structure, f)
-
-# Check constraint generated for each market (1), scenario comparisons (1) and time step (3)
-@test length(c10) == 1 * 1 * 3
-
-# Test that inequality constraint exists for scenario 1, scenario 2, time step 1 (since it has a lower price than s2,t1)
-@test normalized_coefficient(c10["n7", 1, 2, 1], f["n1", "n7", 1, 1]) == 1
-@test normalized_coefficient(c10["n7", 1, 2, 1], f["n7", "n1", 1, 1]) == -1
-@test normalized_coefficient(c10["n7", 1, 2, 1], f["n1", "n7", 2, 1]) == -1
-@test normalized_coefficient(c10["n7", 1, 2, 1], f["n7", "n1", 2, 1]) == 1
-# Checking that this is inequality constraint
-@test isa(c10["n7", 1, 2, 1], ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.LessThan{Float64}}, ScalarShape})
-
-# Test that equality constraint exists for scenario 1,scenario 2, time step 2 (since it has a equal price to s2,t2)
-@test normalized_coefficient(c10["n7", 1, 2, 2], f["n1", "n7", 1, 2]) == 1
-@test normalized_coefficient(c10["n7", 1, 2, 2], f["n7", "n1", 1, 2]) == -1
-@test normalized_coefficient(c10["n7", 1, 2, 2], f["n1", "n7", 2, 2]) == -1
-@test normalized_coefficient(c10["n7", 1, 2, 2], f["n7", "n1", 2, 2]) == 1
-# Checking that this is equality constraint
-@test isa(c10["n7", 1, 2,2], ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.EqualTo{Float64}}, ScalarShape})
-
