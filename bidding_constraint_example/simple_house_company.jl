@@ -18,14 +18,14 @@ T = time_steps(4)
 PV_cf = [[1.0, 0.90, 0.90, 1.0],[0.4, 0.8, 0.5, 0.6]]
 PV = vre_process("PV", PV_cf, S, T)
 
-ELC_demand = -1.0*[[19, 19, 18, 17],[23, 24, 22, 22]]
+ELC_demand = -1*[[19, 19, 18, 17],[23, 24, 22, 22]]
 ELC = energy_node("ELC", ELC_demand, S, T)
 
-NPE_price = 1.0*[[13, 13, 13, 13],[13, 13, 14, 14]] 
+NPE_price = [[13, 13, 13, 13],[13, 13, 14, 14]] 
 NPE = market_node("NPE", NPE_price, S, T)
 
 # Flow from PV to ELC. Notice ramp_rate = 1 because no ramp limit for PV energy.
-PV_generation = process_flow("PV", "ELC", 20.0, 2.0, 1.0)
+PV_generation = process_flow("PV", "ELC", 20, 2, 1)
 
 # Flows to and from ELC to NPE
 ELC_bought, ELC_sold = market_flow("NPE", "ELC")
