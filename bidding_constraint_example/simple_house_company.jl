@@ -24,8 +24,8 @@ ELC = energy_node("ELC", ELC_demand, S, T)
 NPE_price = [[13, 13, 13, 13],[13, 13, 14, 14]] 
 NPE = market_node("NPE", NPE_price, S, T)
 
-# Flow from PV to ELC. Notice ramp_rate = 1 because no ramp limit for PV energy.
-PV_generation = process_flow("PV", "ELC", 20, 2, 1)
+# Flow from PV to ELC
+PV_generation = process_flow("PV", "ELC", 20, 2)
 
 # Flows to and from ELC to NPE
 ELC_bought, ELC_sold = market_flow("NPE", "ELC")

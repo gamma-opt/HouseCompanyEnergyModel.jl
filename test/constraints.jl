@@ -13,19 +13,19 @@ cf = [[0.5, 0.5, 0.5], [0.1, 0.1, 0.1]]
 structure = ModelStructure(S, T, [0.1, 0.9])
 
 n1 = energy_node("n1", time_series, S, T)
-n3 = storage_node("n3", 2.0, 6.0, 20.0, 0.5, demand, S, T, 10) #storage node has demand
+n3 = storage_node("n3", 2, 6, 20, 0.5, demand, S, T, 10) #storage node has demand
 n5 = commodity_node("n5", time_series, S, T)
 n7 = market_node("n7", price, S, T)
 
-p1 = flexible_process("p1", efficiency, S, T)
+p1 = flexible_process("p1", efficiency, cf, S, T, 0.2)
 p3 = vre_process("p3", cf, S, T)
-p5 = online_process("p5", efficiency, S, T, 0.1, 1, 1, 8.0, 1)
+p5 = online_process("p5", efficiency, cf, S, T, 0.1, 1, 1, 0.2, 8.0, 1)
 
-f_a = process_flow("n5", "p5", 30.0, 2.0, 0.1)
-f_b = process_flow("n5", "p1", 30.0, 2.0, 0.2)
-f_c = process_flow("p5", "n1", 5.0, 2.0, 0.2)
-f_d = process_flow("p1", "n3", 6.0, 2.0, 0.1)
-f_e = process_flow("p3", "n1", 8.0, 2.0, 1.0)
+f_a = process_flow("n5", "p5", 30, 2)
+f_b = process_flow("n5", "p1", 30, 2)
+f_c = process_flow("p5", "n1", 5, 2)
+f_d = process_flow("p1", "n3", 6, 2)
+f_e = process_flow("p3", "n1", 8, 2)
 f_f = transfer_flow("n1", "n3")
 f_g, f_h = market_flow("n1", "n7")
 

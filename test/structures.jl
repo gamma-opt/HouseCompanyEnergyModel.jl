@@ -148,13 +148,13 @@ add_nodes!(structure, [n4, n6, n8])
 
 @info "Testing adding processes"
 # example processes, two of each type
-p1 = flexible_process("p1", efficiency, S, T)
-p2 = flexible_process("p2", efficiency, S, T)
+p1 = flexible_process("p1", efficiency, cf, S, T, 0.2)
+p2 = flexible_process("p2", efficiency, cf, S, T, 0.2)
 p3 = vre_process("p3", cf, S, T)
 p4 = vre_process("p4", cf, S, T)
-p5 = online_process("p5", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
-p6 = online_process("p6", efficiency, S, T, 0.1, 1, 1, 1.1, 0)
-pn1 = flexible_process("n1", efficiency, S, T)
+p5 = online_process("p5", efficiency, cf, S, T, 0.1, 1, 1, 0.2, 1.1, 0)
+p6 = online_process("p6", efficiency, cf, S, T, 0.1, 1, 1, 0.2, 1.1, 0)
+pn1 = flexible_process("n1", efficiency, cf, S, T, 0.2)
 
 # Adding processes manually and get_names function works
 structure.flexible_processes = [p1]
@@ -191,7 +191,7 @@ f2 = transfer_flow("n2", "n3")
 
 # node/process - commodity node ERROR
 fX3a = transfer_flow("n2", "n5")
-fX3b = process_flow("p3", "n5", 3.0, 1.0, 1.0)
+fX3b = process_flow("p3", "n5", 3.0, 1.0)
 
 # commodity node - node
 f4 = transfer_flow("n5", "n2")
@@ -204,28 +204,28 @@ f5c, f5d = market_flow("n3", "n8")
 fX6a, fX6b = market_flow("n8", "n7")
 
 # process - process ERROR
-fX7 = process_flow("p1", "p6", 3.0, 1.0, 0.1)
+fX7 = process_flow("p1", "p6", 3.0, 1.0)
 
 # node - vre process ERROR
-fX8a = process_flow("n3", "p3", 3.0, 1.0, 1.0)
-fX8b = process_flow("n4", "p3", 4.0, 1.0, 1.0)
+fX8a = process_flow("n3", "p3", 3.0, 1.0)
+fX8b = process_flow("n4", "p3", 4.0, 1.0)
 
 # commodity node - flexible process
-f9 = process_flow("n6", "p1", 4.0, 1.0, 0.1)
+f9 = process_flow("n6", "p1", 4.0, 1.0)
 
 # vre process - energy node
-f10 = process_flow("p3", "n2", 4.0, 1.0, 1.0)
+f10 = process_flow("p3", "n2", 4.0, 1.0)
 
 # node - online process
-f11a = process_flow("n5", "p5", 2.0, 1.0, 0.1)
+f11a = process_flow("n5", "p5", 2.0, 1.0)
 # online process - storage node
-f11b = process_flow("p6", "n3", 1.0, 1.0, 0.1)
+f11b = process_flow("p6", "n3", 1.0, 1.0)
 
 # Flows for testing flow type specific constraints
 # market node - flexible process for all flow types ERROR
 fX12a, fX12b = market_flow("n7", "p1")
 fX12c = transfer_flow("n7", "p1")
-fX12d = process_flow("n7", "p1", 8.0, 1.0, 0.1)
+fX12d = process_flow("n7", "p1", 8.0, 1.0)
 
 # energy node - flexible process for all but ProcessFlow types ERROR
 fX13a, fX13b = market_flow("n1", "p1")
@@ -233,7 +233,7 @@ fX13c = transfer_flow("n1", "p1")
 
 # energy node - market node for all but MarketFlow types ERROR
 fX14a = transfer_flow("n1", "n8")
-fX14b = process_flow("n1", "n8",  8.0, 1.0, 0.1)
+fX14b = process_flow("n1", "n8",  8.0, 1.0)
 
 
 # add_flows! works for (node -> node) flows
@@ -291,14 +291,14 @@ add_flows!(structure, [f9, f10, f11a, f11b])
 @test_throws DomainError validate_network(structure)
 
 # add storage node - flexible process to include n4
-f15 = process_flow("p2", "n4", 2.0, 1.0, 0.1)
+f15 = process_flow("p2", "n4", 2.0, 1.0)
 add_flows!(structure, [f15])
 
 # validate_network does not work when node p4 not connected
 @test_throws DomainError validate_network(structure)
 
 # add vre process - storage node to include p4
-f16 = process_flow("p4", "n4", 2.0, 1.0, 1.0)
+f16 = process_flow("p4", "n4", 2.0, 1.0)
 add_flows!(structure, [f16])
 
 # validate_network works

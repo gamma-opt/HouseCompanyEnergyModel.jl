@@ -140,15 +140,22 @@ abstract type AbstractProcess end
 struct FlexibleProcess <: AbstractProcess
     name::Name
     efficiency::TimeSeries
+    cf::TimeSeries
+    ramp_rate::Float64
 end
 
-function flexible_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps)
+function flexible_process(name::Name, efficiency::TimeSeries, cf::TimeSeries, S::Scenarios, T::TimeSteps, ramp_rate::Number)
     validate_time_series(efficiency, S, T)
+    validate_time_series(cf, S, T)
     if !all(0 <= efficiency[s][t] <= 1 for s in S, t in T)
         throw(DomainError("Efficiency values must be between 0 and 1."))
+    elseif !all(0 <= cf[s][t] <= 1 for s in S, t in T)
+        throw(DomainError("Capacity factor values must be between 0 and 1."))
+    elseif !(0 <= ramp_rate <= 1)
+        throw(DomainError("Ramp rate value must be between 0 and 1."))
     end
 
-    FlexibleProcess(name, efficiency)
+    FlexibleProcess(name, efficiency, cf, ramp_rate)
 end
 
 
@@ -167,30 +174,60 @@ function vre_process(name::Name, cf::TimeSeries, S::Scenarios, T::TimeSteps)
     VREProcess(name, cf)
 end
 
+
+"""
+    struct OnlineProcess <: AbstractProcess
+        name::Name
+        efficiency::TimeSeries
+        cf::TimeSeries
+        min_load::Float64
+        min_online::Int
+        min_offline::Int
+        ramp_rate::Float64
+        start_cost::Float64
+        initial_status::Int
+    end
+
+Struct for representing online processes.
+
+# Fields
+- `ramp_rate::Float64`: Maximum allowed change of the linked flow variable value between timesteps. Min 0.0 max 1.0. 
+"""
 struct OnlineProcess <: AbstractProcess
     name::Name
     efficiency::TimeSeries
+    cf::TimeSeries
     min_load::Float64
     min_online::Int
     min_offline::Int
+    ramp_rate::Float64
     start_cost::Float64
     initial_status::Int
 end
 
-function online_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps,
-    min_load::Number, min_online::Int, min_offline::Int,
+
+function online_process(name::Name, efficiency::TimeSeries, cf::TimeSeries, S::Scenarios, T::TimeSteps,
+    min_load::Number, min_online::Int, min_offline::Int, ramp_rate::Number,
     start_cost::Number, initial_status::Int=1)
     
     validate_time_series(efficiency, S, T)
+    validate_time_series(cf, S, T)
+
     if !all(0 <= efficiency[s][t] <= 1 for s in S, t in T)
         throw(DomainError("Efficiency values must be between 0 and 1."))
+    elseif !all(0 <= cf[s][t] <= 1 for s in S, t in T)
+        throw(DomainError("Capacity factor values must be between 0 and 1."))
     elseif !(0 <= min_load <= 1)
         throw(DomainError("Minimum load must be between 0 and 1."))
+    elseif !(0 <= min_online && 0 <= min_offline)
+        throw(DomainError("Minimum online and offline times must be nonnegative."))
+    elseif !(0 <= ramp_rate <= 1)
+        throw(DomainError("Ramp rate value must be between 0 and 1."))
     elseif !(0 == initial_status || 1 == initial_status)
         throw(DomainError("Initial status must be 0 or 1."))
     end
 
-    OnlineProcess(name, efficiency, min_load, min_online, min_offline, start_cost, initial_status)
+    OnlineProcess(name, efficiency, cf, min_load, min_online, min_offline, ramp_rate, start_cost, initial_status)
 end
 
 
@@ -205,7 +242,6 @@ abstract type AbstractFlow end
         sink::Name
         capacity::Float64
         VOM_cost::Float64
-        ramp_rate::Float64
     end
 
 A struct for modeling flow connecting node-node or process-node pairs. 
@@ -222,21 +258,18 @@ struct ProcessFlow <: AbstractFlow
     sink::Name
     capacity::Float64
     VOM_cost::Float64
-    ramp_rate::Float64
 end
 
 function process_flow(source::Name, sink::Name, 
-    capacity::Number, VOM_cost::Number, ramp_rate::Number)
+    capacity::Number, VOM_cost::Number)
 
     if source == sink
         throw(DomainError("The source and sink of a flow cannot be the same."))
     elseif capacity < 0
         throw(DomainError("The capacity of a flow must be nonnegative."))
-    elseif !(0 <= ramp_rate <= 1)
-        throw(DomainError("Ramp rate value must be between 0 and 1."))
     end
 
-    ProcessFlow(source, sink, capacity, VOM_cost, ramp_rate)
+    ProcessFlow(source, sink, capacity, VOM_cost)
 end
 
 """
