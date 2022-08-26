@@ -76,6 +76,8 @@ not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 @test_throws DomainError online_process("p3", not_efficiency, S, T, 0.1, 1, 1, 1.1, 1)
 @test_throws DomainError online_process("p3", efficiency, S, T, 0.1, 1, 1, 1.1, 2)
 @test_throws DomainError online_process("p3", efficiency, S, T, 2.0, 1, 1, 1.1, 1)
+@test_throws MethodError online_process("p3", efficiency, S, T, 2, 1.1, 1, 3, 1)
+@test_throws MethodError online_process("p3", efficiency, S, T, 2, 1, 1.2, 3, 1)
 
 
 
@@ -83,12 +85,12 @@ not_cf = [[1,2,3, 4, 5], [1.0,2.0,3.0, 4, 5], [4, 5.5, 6.6, 1, 1]]
 @info "Testing flows"
 # Process Flow
 @test isa(ProcessFlow("n1", "p1", 3.0, 1.0, 0.1), AbstractFlow)
-@test isa(process_flow("n1", "p1", 3.0, 1.0, 0.1), ProcessFlow)
+@test isa(process_flow("n1", "p1", 3, 1, 0), ProcessFlow)
 @test_throws DomainError process_flow("p1", "p1", 3.0, 1.0, 0.1)
 # test incorrect (negative) capacity value
 @test_throws DomainError process_flow("n1", "p1", -1.0, 1.0, 0.1)
 # test incorrect ramp rate value
-@test_throws DomainError process_flow("n1", "p1", 3.0, 1.0, 2.0)  
+@test_throws DomainError process_flow("n1", "p1", 3.0, 1, 2.0)  
 
 # Transfer Flow
 @test isa(TransferFlow("n1", "n2"), AbstractFlow)

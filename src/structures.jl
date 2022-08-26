@@ -43,7 +43,7 @@ end
 Type for storing a vector containing time series values for each scenario. 
 If B is of type TimeSeries, then B[s][t] should give value at time t in scenario s.
 """
-const TimeSeries = Vector{Vector{Float64}}
+const TimeSeries = Vector{Vector{N}} where N<:Number
 
 
 """
@@ -51,7 +51,7 @@ const TimeSeries = Vector{Vector{Float64}}
 
 Function for validating structure of time series is compatible with scenarios S and time steps T.
 """
-function validate_time_series(timeseries::Vector{Vector{Float64}}, S::Scenarios, T::TimeSteps)
+function validate_time_series(timeseries::Vector{Vector{N}}, S::Scenarios, T::TimeSteps) where N<:Number
     if length(S) != length(timeseries)
         throw(DomainError("There must be a time series for each scenario."))
     elseif !all(length(ts) == length(T) for ts in timeseries)
@@ -97,9 +97,9 @@ struct StorageNode <: AbstractNode
     initial_state::Float64
 end
 
-function storage_node(name::Name, in_flow_max::Float64, out_flow_max::Float64, 
-    state_max::Float64, state_loss::Float64, 
-    external_flow::TimeSeries, S::Scenarios, T::TimeSteps, initial_state::Float64=0.0)    
+function storage_node(name::Name, in_flow_max::Number, out_flow_max::Number, 
+    state_max::Number, state_loss::Number, 
+    external_flow::TimeSeries, S::Scenarios, T::TimeSteps, initial_state::Number=0)    
 
     validate_time_series(external_flow, S, T)
     if !(0 <= state_loss <= 1)
@@ -178,8 +178,8 @@ struct OnlineProcess <: AbstractProcess
 end
 
 function online_process(name::Name, efficiency::TimeSeries, S::Scenarios, T::TimeSteps,
-    min_load::Float64, min_online::Int, min_offline::Int,
-    start_cost::Float64, initial_status::Int=1)
+    min_load::Number, min_online::Int, min_offline::Int,
+    start_cost::Number, initial_status::Int=1)
     
     validate_time_series(efficiency, S, T)
     if !all(0 <= efficiency[s][t] <= 1 for s in S, t in T)
@@ -226,9 +226,7 @@ struct ProcessFlow <: AbstractFlow
 end
 
 function process_flow(source::Name, sink::Name, 
-    capacity::Float64,
-    VOM_cost::Float64, 
-    ramp_rate::Float64)
+    capacity::Number, VOM_cost::Number, ramp_rate::Number)
 
     if source == sink
         throw(DomainError("The source and sink of a flow cannot be the same."))
