@@ -99,7 +99,7 @@ end
 
 function storage_node(name::Name, in_flow_max::Float64, out_flow_max::Float64, 
     state_max::Float64, state_loss::Float64, 
-    external_flow::TimeSeries, S::Scenarios, T::TimeSteps, initial_state=0)    
+    external_flow::TimeSeries, S::Scenarios, T::TimeSteps, initial_state::Float64=0.0)    
 
     validate_time_series(external_flow, S, T)
     if !(0 <= state_loss <= 1)
