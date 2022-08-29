@@ -52,6 +52,8 @@ balance = state_balance_constraints(model, structure, f, shortage, surplus)
 
 flow_bounds = process_flow_constraints(model, structure, f)
 
+cf_bounds = cf_flow_constraints(model, structure, f)
+
 objective = declare_objective(model, structure, f, shortage, surplus, 50.0)
 
 optimizer = optimizer_with_attributes(
