@@ -1,6 +1,6 @@
 using Revise
 using JuMP
-using PredicerTestVersion
+using HouseCompanyEnergyModel
 using Gurobi
 
 # Define market bidding constraint function that is to be tested

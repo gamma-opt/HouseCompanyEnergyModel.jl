@@ -1,5 +1,5 @@
 using JuMP
-using PredicerTestVersion 
+using HouseCompanyEnergyModel 
 
 # -- Energy market bidding constraints --
 function market_bidding_constraints(model::Model, structure::ModelStructure,

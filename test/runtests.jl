@@ -1,6 +1,6 @@
 using Test
 using Logging
-using PredicerTestVersion
+using HouseCompanyEnergyModel
 
 @testset "PredicerTestVersion" begin
     include("structures.jl")

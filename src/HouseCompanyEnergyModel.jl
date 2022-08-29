@@ -1,4 +1,4 @@
-module PredicerTestVersion
+module HouseCompanyEnergyModel
 
 include("structures.jl")
 include("variables.jl")
