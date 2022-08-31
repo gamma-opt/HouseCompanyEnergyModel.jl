@@ -46,17 +46,20 @@ cf_bounds = cf_flow_constraints(model, structure, f)
 
 objective = declare_objective(model, structure, f, shortage, surplus, 50.0)
 
+# Setting up the solver
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-6,
 )
 set_optimizer(model, optimizer)
 
-
+# Optimising the model
 optimize!(model)
 
+# Checking that the slack variables are zero
 if any(value(i) != 0 for i in values(shortage)) || any(value(i) != 0 for i in values(surplus))
     throw(DomainError("Slack variables nonzero!!!"))
 end  
 
+# Printing solution summary
 solution_summary(model, verbose=true)
