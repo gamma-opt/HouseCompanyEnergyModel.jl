@@ -21,11 +21,11 @@ PV = vre_process("PV", PV_cf, S, T)
 ELC_demand = -1*[[19, 19, 18, 17],[23, 24, 22, 22]]
 ELC = energy_node("ELC", ELC_demand, S, T)
 
-NPE_price = [[13, 13, 13, 13],[13, 13, 14, 14]] 
+NPE_price = [[13, 13, 13, 13],[13, 13, 14, 12]] 
 NPE = market_node("NPE", NPE_price, S, T)
 
 # Flow from PV to ELC
-PV_generation = process_flow("PV", "ELC", 20, 2)
+PV_generation = process_flow("PV", "ELC", 20, 0.0)
 
 # Flows to and from ELC to NPE
 ELC_bought, ELC_sold = market_flow("NPE", "ELC")
@@ -49,8 +49,6 @@ shortage, surplus = shortage_surplus_variables(model, structure)
 
 # Constraint generation
 balance = state_balance_constraints(model, structure, f, shortage, surplus)
-
-flow_bounds = process_flow_constraints(model, structure, f)
 
 cf_bounds = cf_flow_constraints(model, structure, f)
 
