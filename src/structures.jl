@@ -5,7 +5,7 @@
 """
     const TimeSteps = UnitRange{Int}
 
-Type for time steps at time intervals of 1. Alias for UnitRange{Int}
+Type for time steps at time intervals of 1 time unit. Alias for UnitRange{Int}
 """
 const TimeSteps = UnitRange{Int}
 
@@ -73,20 +73,50 @@ abstract type AbstractNode end
 """
     const Name = String
 
-Type alias for String to ease reading of names.
+Type alias for String to ease readability of code.
 """
 const Name = String
 
+
+"""
+    struct EnergyNode <: AbstractNode
+        name::Name
+        external_flow::TimeSeries
+    end
+
+Type for modeling energy nodes.
+"""
 struct EnergyNode <: AbstractNode
     name::Name
     external_flow::TimeSeries
 end
 
+
+"""
+    function energy_node(name::Name, external_flow::TimeSeries, S::Scenarios, T::TimeSteps)
+
+Construct EnergyNode with given inflow or demand given as external flow time series.
+"""
 function energy_node(name::Name, external_flow::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(external_flow, S, T)
     EnergyNode(name, external_flow)
 end
 
+
+"""
+    struct StorageNode <: AbstractNode
+        name::Name
+        in_flow_max::Float64
+        out_flow_max::Float64
+        state_max::Float64
+        state_loss::Float64
+        external_flow::TimeSeries
+        initial_state::Float64
+    end
+
+
+Type for modeling storage nodes.
+"""
 struct StorageNode <: AbstractNode
     name::Name
     in_flow_max::Float64
@@ -97,6 +127,13 @@ struct StorageNode <: AbstractNode
     initial_state::Float64
 end
 
+"""
+    function storage_node(name::Name, in_flow_max::Number, out_flow_max::Number, 
+        state_max::Number, state_loss::Number, 
+        external_flow::TimeSeries, S::Scenarios, T::TimeSteps, initial_state::Number=0) 
+
+Construct StorageNode with given parameters.
+"""
 function storage_node(name::Name, in_flow_max::Number, out_flow_max::Number, 
     state_max::Number, state_loss::Number, 
     external_flow::TimeSeries, S::Scenarios, T::TimeSteps, initial_state::Number=0)    
@@ -111,21 +148,50 @@ function storage_node(name::Name, in_flow_max::Number, out_flow_max::Number,
 end
 
 
+"""
+    struct CommodityNode <: AbstractNode
+        name::Name
+        cost::TimeSeries
+    end
+
+
+Type for modeling commodity nodes.
+"""
 struct CommodityNode <: AbstractNode
     name::Name
     cost::TimeSeries
 end
 
+
+"""
+    function commodity_node(name::Name, cost::TimeSeries, S::Scenarios, T::TimeSteps)
+
+Construct CommodityNode with given cost time series.
+"""
 function commodity_node(name::Name, cost::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(cost, S, T)
     CommodityNode(name, cost)
 end
 
+"""
+    struct MarketNode <: AbstractNode
+        name::Name
+        price::TimeSeries
+    end
+
+
+Type for modeling market nodes.
+"""
 struct MarketNode <: AbstractNode
     name::Name
     price::TimeSeries
 end
 
+"""
+    function market_node(name::Name, price::TimeSeries, S::Scenarios, T::TimeSteps)
+
+Construct MarketNode with given market price estimate time series.
+"""
 function market_node(name::Name, price::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(price, S, T)
     MarketNode(name, price)
@@ -134,9 +200,25 @@ end
 
 
 # --- Processes ---
+"""
+    abstract type AbstractProcess end
 
+Abstract type for processes.
+"""
 abstract type AbstractProcess end
 
+
+"""
+    struct FlexibleProcess <: AbstractProcess
+        name::Name
+        efficiency::TimeSeries
+        cf::TimeSeries
+        ramp_rate::Float64
+    end
+
+
+Type for modeling flexible processes.
+"""
 struct FlexibleProcess <: AbstractProcess
     name::Name
     efficiency::TimeSeries
@@ -144,6 +226,11 @@ struct FlexibleProcess <: AbstractProcess
     ramp_rate::Float64
 end
 
+"""
+    function flexible_process(name::Name, efficiency::TimeSeries, cf::TimeSeries, S::Scenarios, T::TimeSteps, ramp_rate::Number)
+
+Construct FlexibleProcess with given efficiency and capacity factor time series and ramp rate. 
+"""
 function flexible_process(name::Name, efficiency::TimeSeries, cf::TimeSeries, S::Scenarios, T::TimeSteps, ramp_rate::Number)
     validate_time_series(efficiency, S, T)
     validate_time_series(cf, S, T)
@@ -158,12 +245,25 @@ function flexible_process(name::Name, efficiency::TimeSeries, cf::TimeSeries, S:
     FlexibleProcess(name, efficiency, cf, ramp_rate)
 end
 
+"""
+    struct VREProcess <: AbstractProcess
+        name::Name
+        cf::TimeSeries
+    end
 
+
+Type for modeling VRE processes.
+"""
 struct VREProcess <: AbstractProcess
     name::Name
     cf::TimeSeries
 end
 
+"""
+    function vre_process(name::Name, cf::TimeSeries, S::Scenarios, T::TimeSteps)
+
+Construct VREProcess with given capacity factor time series.
+"""
 function vre_process(name::Name, cf::TimeSeries, S::Scenarios, T::TimeSteps)
     validate_time_series(cf, S, T)
 
@@ -188,10 +288,7 @@ end
         initial_status::Int
     end
 
-Struct for representing online processes.
-
-# Fields
-- `ramp_rate::Float64`: Maximum allowed change of the linked flow variable value between timesteps. Min 0.0 max 1.0. 
+Type for representing online processes.
 """
 struct OnlineProcess <: AbstractProcess
     name::Name
@@ -205,7 +302,13 @@ struct OnlineProcess <: AbstractProcess
     initial_status::Int
 end
 
+"""
+    function online_process(name::Name, efficiency::TimeSeries, cf::TimeSeries, S::Scenarios, T::TimeSteps,
+        min_load::Number, min_online::Int, min_offline::Int, ramp_rate::Number,
+        start_cost::Number, initial_status::Int=1)
 
+Construct OnlineProcess with given parameters.
+"""
 function online_process(name::Name, efficiency::TimeSeries, cf::TimeSeries, S::Scenarios, T::TimeSteps,
     min_load::Number, min_online::Int, min_offline::Int, ramp_rate::Number,
     start_cost::Number, initial_status::Int=1)
@@ -233,8 +336,13 @@ end
 
 
 # --- Flow ---
+"""
+    abstract type AbstractFlow end
 
+Abstract type for flows.
+"""
 abstract type AbstractFlow end
+
 
 """
     struct ProcessFlow <: AbstractFlow
@@ -244,14 +352,7 @@ abstract type AbstractFlow end
         VOM_cost::Float64
     end
 
-A struct for modeling flow connecting node-node or process-node pairs. 
-
-# Fields
-- `source::Name`: Name of the source of the topology.
-- `sink::Name`: Name of the sink of the topology.
-- `capacity::Float64`: Upper limit of the flow variable. 
-- `VOM_cost::Float64`: VOM cost of using this connection. 
-- `ramp_rate::Float64`: Maximum allowed change of the linked flow variable value between timesteps. Min 0.0 max 1.0. 
+Type for modeling flows connecting node-process or process-node pairs. 
 """
 struct ProcessFlow <: AbstractFlow
     source::Name
@@ -260,6 +361,13 @@ struct ProcessFlow <: AbstractFlow
     VOM_cost::Float64
 end
 
+
+"""
+    function process_flow(source::Name, sink::Name, 
+        capacity::Number, VOM_cost::Number)
+
+Construct ProcessFlow between source and sink with a capacity and VOM costs given as parameters.
+"""
 function process_flow(source::Name, sink::Name, 
     capacity::Number, VOM_cost::Number)
 
@@ -278,13 +386,19 @@ end
         sink::Name
     end
 
-Flow structure for one directional transfer of energy between a market and a node.
+Type for modeling transfer flows, which move energy between two nodes.
 """
 struct TransferFlow <: AbstractFlow
     source::Name
     sink::Name
 end
 
+
+"""
+    function transfer_flow(source::Name, sink::Name)
+
+Construct TransferFlow between source and sink.
+"""
 function transfer_flow(source::Name, sink::Name)
     if source == sink
         throw(DomainError("The source and sink of a flow cannot be the same."))
@@ -299,7 +413,7 @@ end
         sink::Name
     end
 
-Flow structure for transfer of energy between a market node and another node.
+Type for modeling market flows, which transfer energy between a market node and another node.
 """
 struct MarketFlow <: AbstractFlow
     source::Name
@@ -309,7 +423,7 @@ end
 """
     function market_flow(market::Name, node::Name)
 
-Return MarketFlow structures for (bought energy, returned energy) between the market node and another node.
+Return two MarketFlow structures in order of (bought energy, sold energy) between the market node and other node.
 """
 function market_flow(market::Name, node::Name)
     if market == node
@@ -318,6 +432,7 @@ function market_flow(market::Name, node::Name)
 
     MarketFlow(market, node), MarketFlow(node, market)
 end
+
 
 # --- ModelStructure ---
 
@@ -373,6 +488,12 @@ end
     function get_names(structure::ModelStructure; nodes::Bool=false, processes::Bool=false)
 
 Return vector of nodes' and/or processes' names.
+
+# Fields
+- `structure::ModelStructure`: Structure of the house company's energy system. 
+- `nodes::Bool=false`: Set true if names of nodes should be returned.
+- `processes::Bool=false`: Set true if names of processes should be returned.
+
 """
 function get_names(structure::ModelStructure; nodes::Bool=false, processes::Bool=false)
     all_names = []
@@ -396,9 +517,14 @@ end
 """
     function get_flows(structure::ModelStructure; names=false)
 
-Return vector of flows in structure. If names=true, then return list of (source, sink) pairs of names. 
+Return flows (of type AbstractFlow) in structure as a vector.
+
+# Fields
+- `structure::ModelStructure`: Structure of the house company's energy system. 
+- `names::Bool=false`: Set true if only names of (source, sink) pairs should be returned.
+
 """
-function get_flows(structure::ModelStructure; names=false)
+function get_flows(structure::ModelStructure; names::Bool=false)
     
     if names
         flows = []
@@ -419,7 +545,11 @@ function get_flows(structure::ModelStructure; names=false)
     return flows
 end
 
+"""
+    function add_nodes!(structure::ModelStructure, nodes::Vector{N}) where N<:AbstractNode
 
+Add nodes to model structure into the correct fields according to node type.
+"""
 function add_nodes!(structure::ModelStructure, nodes::Vector{N}) where N<:AbstractNode
     for n in nodes
         
@@ -446,7 +576,11 @@ function add_nodes!(structure::ModelStructure, nodes::Vector{N}) where N<:Abstra
     end
 end
 
+"""
+    function add_processes!(structure::ModelStructure, processes::Vector{N}) where N<:AbstractProcess
 
+Add processes to model structure into the correct fields according to process type.
+"""
 function add_processes!(structure::ModelStructure, processes::Vector{N}) where N<:AbstractProcess
     for p in processes
         
@@ -470,7 +604,11 @@ function add_processes!(structure::ModelStructure, processes::Vector{N}) where N
     end
 end
 
+"""
+    function add_flows!(structure::ModelStructure, flows::Vector{N}) where N<:AbstractFlow
 
+Add flows to model structure into the correct fields according to flow type.
+"""
 function add_flows!(structure::ModelStructure, flows::Vector{N}) where N<:AbstractFlow
     names = get_names(structure, nodes=true, processes=true)
     nodes = get_names(structure, nodes=true)
@@ -551,6 +689,11 @@ function add_flows!(structure::ModelStructure, flows::Vector{N}) where N<:Abstra
     end
 end
 
+"""
+    function validate_network(structure::ModelStructure)
+
+Validate that all processes and nodes are connected to some other node or process in the model.
+"""
 function validate_network(structure::ModelStructure)
 
     # Check that all nodes and processes are connected to flow
