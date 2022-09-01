@@ -33,7 +33,17 @@ function charging_discharging_constraints(model::Model, structure::ModelStructur
     charging_constraints, discharging_constraints
 end
 
-function state_balance_constraints(model::Model, structure::ModelStructure, 
+# -- Energy balance constraints --
+"""
+    function energy_balance_constraints(model::Model, structure::ModelStructure, 
+        flow_variables::Dict{FlowTuple, VariableRef},
+        shortage_variables::Dict{NodeTuple, VariableRef},
+        surplus_variables::Dict{NodeTuple, VariableRef},
+        state_variables::Dict{NodeTuple, VariableRef} = Dict{NodeTuple, VariableRef}())  
+
+Add energy balance constraints for energy and storage nodes to JuMP model.
+"""
+function energy_balance_constraints(model::Model, structure::ModelStructure, 
     flow_variables::Dict{FlowTuple, VariableRef},
     shortage_variables::Dict{NodeTuple, VariableRef},
     surplus_variables::Dict{NodeTuple, VariableRef},

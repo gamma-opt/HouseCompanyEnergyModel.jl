@@ -47,7 +47,7 @@ f  = flow_variables(model, structure)
 shortage, surplus = shortage_surplus_variables(model, structure)
 
 # Constraint generation
-balance = state_balance_constraints(model, structure, f, shortage, surplus)
+balance = energy_balance_constraints(model, structure, f, shortage, surplus)
 
 cf_bounds = cf_flow_constraints(model, structure, f)
 

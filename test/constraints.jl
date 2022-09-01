@@ -76,8 +76,8 @@ RHS = 6.0
 
 
 
-@info "State balance constraints"
-c3 = state_balance_constraints(model, structure, f, shortage, surplus, s)
+@info "Energy balance constraints"
+c3 = energy_balance_constraints(model, structure, f, shortage, surplus, s)
 
 # Check constraint generated for each storage and energy node (2), scenario (2) and time step (3)
 @test length(c3) == 2 * 2 * 3
