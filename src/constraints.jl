@@ -1,7 +1,12 @@
 using JuMP
 
 # -- Storage constraints --
-# Charging and discharging storage constraint
+"""
+    function charging_discharging_constraints(model::Model, structure::ModelStructure,
+        state_variables::Dict{NodeTuple, VariableRef})  
+
+Add charging and discharging storage constraints to JuMP model.
+"""
 function charging_discharging_constraints(model::Model, structure::ModelStructure,
     state_variables::Dict{NodeTuple, VariableRef})
     
@@ -94,7 +99,15 @@ function energy_balance_constraints(model::Model, structure::ModelStructure,
     balance_constraints
 end
 
+
 # -- Process flows' upper and lower bound constraints --
+"""
+    function process_flow_constraints(model::Model, structure::ModelStructure,
+        flow_variables::Dict{FlowTuple, VariableRef},
+        online_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())  
+
+Add upper and lower bound constraints for flexible and online processes to JuMP model.
+"""
 function process_flow_constraints(model::Model, structure::ModelStructure,
     flow_variables::Dict{FlowTuple, VariableRef},
     online_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())
@@ -137,6 +150,14 @@ end
 
 
 # -- Ramp rate of flexible and online processes constraints --
+"""
+    function process_ramp_rate_constraints(model::Model, structure::ModelStructure, 
+        flow_variables::Dict{FlowTuple, VariableRef},
+        start_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}(),
+        stop_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())  
+
+Add ramp rate constraints for flexible and online processes to JuMP model.
+"""
 function process_ramp_rate_constraints(model::Model, structure::ModelStructure, 
     flow_variables::Dict{FlowTuple, VariableRef},
     start_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}(),
@@ -193,6 +214,12 @@ function process_ramp_rate_constraints(model::Model, structure::ModelStructure,
 end
 
 # -- Process efficiency constraints --
+"""
+    function process_efficiency_constraints(model::Model, structure::ModelStructure, 
+        flow_variables::Dict{FlowTuple, VariableRef})  
+
+Add process efficiency constraints for flexible and online processes to JuMP model.
+"""
 function process_efficiency_constraints(model::Model, structure::ModelStructure, 
     flow_variables::Dict{FlowTuple, VariableRef})
 
@@ -221,6 +248,14 @@ function process_efficiency_constraints(model::Model, structure::ModelStructure,
 end
 
 # -- Online/offline functionality constraints --
+"""
+    function online_functionality_constraints(model::Model, structure::ModelStructure,
+        start_variables::Dict{NodeTuple, VariableRef},
+        stop_variables::Dict{NodeTuple, VariableRef},
+        online_variables::Dict{NodeTuple, VariableRef})  
+
+Add online offline functionality constraints for online processes to JuMP model.
+"""
 function online_functionality_constraints(model::Model, structure::ModelStructure,
     start_variables::Dict{NodeTuple, VariableRef},
     stop_variables::Dict{NodeTuple, VariableRef},
@@ -278,6 +313,14 @@ function online_functionality_constraints(model::Model, structure::ModelStructur
     on_off_constraints, min_online_constraints, min_offline_constraints
 end
 
+
+# -- Capacity factor constraints --
+"""
+    function cf_flow_constraints(model::Model, structure::ModelStructure,
+        flow_variables::Dict{FlowTuple, VariableRef})  
+
+Add capacity factor upper bound constraints for output flows of processes to JuMP model.
+"""
 function cf_flow_constraints(model::Model, structure::ModelStructure,
     flow_variables::Dict{FlowTuple, VariableRef})
 

@@ -4,7 +4,7 @@ using JuMP
 """
     const FlowTuple = Tuple{String, String, Int64, Int64}
 
-Type for flow variable indices. Alias for NamedTuple with source, sink, time step and scenario.
+Type for flow variables' indices. Alias for Tuple with source, sink, time step and scenario.
 """
 const FlowTuple = Tuple{String, String, Int64, Int64}
 
@@ -12,7 +12,7 @@ const FlowTuple = Tuple{String, String, Int64, Int64}
 """
     const NodeTuple = Tuple{String, Int64, Int64}
 
-Type for state, shortage and surplus variables' indices. Alias for NamedTuple with node, time step and scenario.
+Type for state, shortage and surplus variables' indices. Alias for Tuple with node name, time step and scenario.
 """
 const NodeTuple = Tuple{String, Int64, Int64}
 
@@ -20,7 +20,7 @@ const NodeTuple = Tuple{String, Int64, Int64}
 """
     const ProcessTuple = Tuple{String, Int64, Int64}
 
-Type for start, stop and online variables' indices. Alias for NamedTuple with process, time step and scenario.
+Type for start, stop and online variables' indices. Alias for Tuple with process name, time step and scenario.
 """
 const ProcessTuple = Tuple{String, Int64, Int64}
 
@@ -28,7 +28,7 @@ const ProcessTuple = Tuple{String, Int64, Int64}
 """
     function flow_variables(model::Model, structure::ModelStructure)
 
-Declare JuMP variables for all flows with lower bounds declared. 
+Declare JuMP variables for all flows in model structure with zero lower bounds. 
     
     Return variables in Dict{FlowTuple, VariableRef}.
 """
@@ -60,7 +60,7 @@ end
 """
     function state_variables(model::Model, structure::ModelStructure)
 
-Declare JuMP variables for states of all storage nodes with lower and upper bounds declared. 
+Declare JuMP variables for states of all storage nodes with zero lower bounds and maximum state upper bounds declared. 
     
     Return variables in Dict{NodeTuple, VariableRef}.
 """
@@ -91,9 +91,9 @@ end
 """
     function shortage_surplus_variables(model::Model, structure::ModelStructure)
 
-Declare shortage and surplus JuMP variables for all energy and storage nodes with lower bounds declared.
+Declare shortage and surplus JuMP variables for all energy and storage nodes with zero lower bounds declared.
 
-Return shortage and surplus variables in Dict{NodeTuple, VariableRef}, Dict{NodeTuple, VariableRef} format.
+    Return shortage and surplus variables in Dict{NodeTuple, VariableRef}, Dict{NodeTuple, VariableRef} format.
 """
 function shortage_surplus_variables(model::Model, structure::ModelStructure)
     # scerios and time steps

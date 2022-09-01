@@ -1,5 +1,16 @@
 using JuMP
 
+
+"""
+    function declare_objective(model::Model, structure::ModelStructure,
+        flow_variables::Dict{FlowTuple, VariableRef},
+        shortage_variables::Dict{NodeTuple, VariableRef},
+        surplus_variables::Dict{NodeTuple, VariableRef},
+        penalty::Float64,
+        start_variables::Dict{ProcessTuple, VariableRef} = Dict{ProcessTuple, VariableRef}())
+
+Add expected cost minimising objective function to JuMP model.
+"""
 function declare_objective(model::Model, structure::ModelStructure,
     flow_variables::Dict{FlowTuple, VariableRef},
     shortage_variables::Dict{NodeTuple, VariableRef},
