@@ -11,7 +11,7 @@ The motivation, description and formulation of the project is found in the House
 This package is an unregistered julia package. The package can be installed directly from GitHub using the following command.
 
 ```julia
-    pkg> add https://github.com/?
+    pkg> add https://github.com/gamma-opt/HouseCompanyEnergyModel.jl.git
 ```
 
 # Development
